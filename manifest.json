@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Mentari Mod v2.0 Sunset",
-  "version": "2.0",
+  "name": "Mentari Mod v2.1 Autopilot",
+  "version": "2.1",
   "description": "Ekstensi untuk meningkatkan pengalaman belajar di MENTARI UNPAM dengan fitur pelacakan forum, asisten AI, bantuan quiz, dan manajemen presensi.",
   "permissions": ["scripting", "activeTab"],
   "host_permissions": [

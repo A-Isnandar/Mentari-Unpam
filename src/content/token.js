@@ -1,5 +1,5 @@
 (function () {
-  const APP_VERSION = "2.0 Sunset";
+  const APP_VERSION = "2.1 Autopilot";
   console.log("Mentari Mod Token script loaded.");
 
   const Config = {
@@ -14,6 +14,110 @@
       GEMINI_QUOTA: "gemini_quota",
       GEMINI_API_KEY: "geminiApiKey",
       GEMINI_MODEL_STATS: "gemini_model_stats",
+      COMPLETED_TRACKER: "mentari_completed_tracker",
+      FORUM_FILTER_MODE: "mentari_forum_filter_mode",
+    },
+    PROMPTS_FORUM: {
+      ANSWER(questionText, styleMode = "natural", peerReplies = []) {
+        const styleDescriptions = {
+          natural: "Gunakan gaya bahasa santai dan natural layaknya mahasiswa UNPAM yang aktif, lugas, mengalir, sopan, dan tidak kaku.",
+          formal: "Gunakan gaya bahasa akademis formal, terstruktur rapi, menggunakan tata bahasa baku dan kosakata ilmiah yang tepat.",
+          analytical: "Gunakan gaya analitis mendalam, sertakan penalaran kritis, contoh kasus nyata di dunia industri/kehidupan sehari-hari, atau analogi logis.",
+          concise: "Gunakan gaya sangat ringkas, padat, langsung to-the-point menjawab inti pertanyaan tanpa kalimat pengantar atau bertele-tele."
+        };
+        const chosenStyle = styleDescriptions[styleMode] || styleDescriptions.natural;
+
+        let peerNotice = "";
+        if (peerReplies && peerReplies.length > 0) {
+          peerNotice = `\n\nREFERENSI JAWABAN TEMAN SEKELAS (HANYA UNTUK ACUAN PERBEDAAN):\n${peerReplies.map((r, i) => `${i + 1}. ${r}`).join("\n")}\n\nInstruksi Anti-Plagiasi: Tulis jawaban dengan sudut pandang dan contoh kasus yang BERBEDA dari referensi di atas. DILARANG KERAS mengutip nama atau menyebut referensi secara langsung!`;
+        }
+
+        return `Kamu adalah seorang mahasiswa Universitas Pamulang (UNPAM) yang cerdas dan aktif berdiskusi di forum e-learning.
+Jawab topik diskusi/pertanyaan berikut secara langsung ke inti pembahasan.
+
+ATURAN WAJIB & SANGAT KETAT:
+1. WAJIB selalu awali kalimat pertama persis dengan frasa "Izin menjawab," (contoh: "Izin menjawab, terkait topik diskusi ini...", "Izin menjawab, menurut pemahaman saya...").
+2. DILARANG KERAS menyebut subjek/objek seperti nama mahasiswa, NIM (Nomor Induk Mahasiswa / deretan angka), nama dosen, atau sapaan ("Halo rekan", "Bapak/Ibu dosen", dll). Langsung fokus pada substansi materi.
+3. DILARANG KERAS menggunakan format Markdown seperti huruf tebal (**teks**), huruf miring (*teks*), heading (###), atau bullet bintang (*).
+4. Jawaban WAJIB berupa teks bersih mengalir (Plain Text murni). Jika pertanyaan menanyakan poin-poin langkah atau klasifikasi, gunakan penomoran angka biasa (1., 2., 3.).
+5. JANGAN gunakan salam pembuka ("Halo", "Selamat pagi", "Assalamu'alaikum"), sapaan personal, penutup ("Semoga membantu", "Terima kasih"), atau basa-basi AI ("Berikut jawabannya", "Tentu, ini analisis saya:"). Awali LANGSUNG dengan "Izin menjawab, ...".
+6. Jika pertanyaan meminta contoh kode pemrograman (coding), sertakan contoh potongan kode singkat dan bersih yang relevan.
+7. Panduan Gaya: ${chosenStyle}${peerNotice}
+
+TOPIK/PERTANYAAN DISKUSI:
+${questionText}
+
+JAWABAN PLAIN TEXT:`;
+      },
+
+      QUESTIONS(questionText) {
+        return `Bacalah konteks diskusi forum e-learning UNPAM berikut, lalu buatkan 3 saran pertanyaan yang berbobot, natural, dan relevan untuk diajukan di forum.
+
+ATURAN WAJIB:
+- Buat tepat 3 pertanyaan, pisahkan setiap pertanyaan HANYA dengan baris baru (enter).
+- Setiap pertanyaan harus berdiri sendiri, tidak saling terhubung, dan JANGAN menggunakan kata sambung di awal kalimat seperti "Selain itu", "Lalu", "Dan".
+- DILARANG menggunakan penomoran (1., 2.), bullet (*, -), huruf tebal (**), miring (*), atau markdown apapun. Hanya teks pertanyaan murni per baris.
+- DILARANG menyebut nama mahasiswa/NIM/dosen.
+- Gaya bahasa mahasiswa yang sopan dan ingin tahu.
+
+KONTEKS DISKUSI:
+${questionText}
+
+SARAN PERTANYAAN:`;
+      },
+
+      REVISE(mode, currentText) {
+        const modes = {
+          shorten: `Ringkas jawaban forum berikut menjadi lebih singkat, padat, dan langsung ke inti pembahasan, tetap diawali "Izin menjawab," tanpa bullet bintang atau markdown, dan tanpa menyebut nama/NIM/dosen:\n\n${currentText}`,
+          paragraph: `Ubah jawaban forum berikut menjadi satu paragraf utuh yang rapi dan mengalir, tetap diawali "Izin menjawab," tanpa bullet atau penomoran markdown, dan tanpa menyebut nama/NIM/dosen:\n\n${currentText}`,
+          clarify: `Perjelas dan perbaiki struktur jawaban forum berikut agar lebih mudah dipahami dan lugas, tetap diawali "Izin menjawab," seperti bahasa manusia tanpa markdown, dan tanpa menyebut nama/NIM/dosen:\n\n${currentText}`,
+          lengthen: `Perpanjang dan tambahkan elaborasi penjelasan pada jawaban forum berikut secara relevan dan komprehensif, tetap diawali "Izin menjawab," tanpa bullet bintang atau markdown, dan tanpa menyebut nama/NIM/dosen:\n\n${currentText}`,
+          numbered: `Ubah uraian jawaban forum berikut menjadi poin-poin bernomor angka (1., 2., 3.), tetap diawali "Izin menjawab," tanpa huruf tebal atau markdown, dan tanpa menyebut nama/NIM/dosen:\n\n${currentText}`
+        };
+        const promptText = modes[mode] || modes.clarify;
+        return `${promptText}\n\nIngat: WAJIB diawali "Izin menjawab,". DILARANG menyebut nama mahasiswa/NIM/dosen. DILARANG menggunakan huruf tebal (**), miring (*), atau bullet bintang. Balas HANYA teks bersih murni.\n\nHASIL REVISI:`;
+      },
+
+      PEER_RESPONSE(questionText, peerText) {
+        return `Kamu adalah seorang mahasiswa Universitas Pamulang (UNPAM) yang aktif dan santun dalam forum diskusi e-learning.
+Berikan tanggapan akademik lanjutan untuk memperkaya diskusi.
+
+TOPIK DISKUSI:
+${questionText}
+
+ARGUMEN DISKUSI SEBELUMNYA:
+${peerText}
+
+ATURAN WAJIB & SANGAT KETAT:
+1. WAJIB selalu awali kalimat pertama persis dengan frasa "Izin menjawab," (contoh: "Izin menjawab, saya sependapat dengan argumen di atas mengenai...", "Izin menjawab, menambahkan perspektif terkait implementasi...", atau "Izin menjawab, menurut pandangan saya...").
+2. DILARANG KERAS menyebut subjek/objek seperti nama mahasiswa, NIM (Nomor Induk Mahasiswa / deretan angka), nama dosen, sapaan ("Halo rekan", "Rekan mahasiswa", "Bapak/Ibu Dosen", "Menanggapi saudara/rekan"). Langsung bahas substansi materi diskusi.
+3. DILARANG KERAS menggunakan format Markdown seperti huruf tebal (**teks**), huruf miring (*teks*), heading (###), atau bullet bintang (*). WAJIB berupa teks mengalir (Plain Text murni).
+4. JANGAN gunakan salam pembuka ("Halo", "Selamat pagi", "Assalamu'alaikum"), sapaan penutup, atau basa-basi AI. Langsung mulai dari "Izin menjawab, ...".
+5. Berikan elaborasi tambahan, relevansi studi kasus nyata di dunia kerja/teknologi, atau sudut pandang pelengkap yang memperkaya diskusi secara natural.
+
+TANGGAPAN MAHASISWA PLAIN TEXT:`;
+      },
+
+      FOLLOW_UP(questionText, firstReplyText = "") {
+        let prevNotice = "";
+        if (firstReplyText) {
+          prevNotice = `\n\nJAWABAN SEBELUMNYA:\n${firstReplyText}\n\nInstruksi: Berikan sudut pandang pelengkap, tinjauan implementasi/studi kasus nyata, atau simpulan reflektif yang berbeda dan belum dibahas pada jawaban sebelumnya.`;
+        }
+        return `Kamu adalah seorang mahasiswa Universitas Pamulang (UNPAM) yang aktif berdiskusi di forum e-learning.
+Tuliskan balasan kedua berupa elaborasi mendalam untuk memperkaya diskusi pada topik berikut.
+
+TOPIK DISKUSI:
+${questionText}${prevNotice}
+
+ATURAN WAJIB & SANGAT KETAT:
+1. WAJIB selalu awali kalimat pertama persis dengan frasa "Izin menjawab," (contoh: "Izin menjawab, menambahkan poin refleksi dari pembahasan ini...", "Izin menjawab, dari sudut pandang implementasi praktis...").
+2. DILARANG KERAS menyebut subjek/objek seperti nama mahasiswa, NIM, nama dosen, atau sapaan pembuka apapun. Langsung fokus ke substansi materi.
+3. DILARANG KERAS menggunakan format Markdown seperti huruf tebal (**teks**), huruf miring (*teks*), heading (###), atau bullet bintang (*).
+4. Jawaban WAJIB berupa teks bersih mengalir (Plain Text murni).
+5. Gaya bahasa mengalir, sopan, natural, dan akademis layaknya mahasiswa UNPAM.
+
+BALASAN LANJUTAN PLAIN TEXT:`;
+      }
     },
     API: {
       BASE_URL: "https://mentari.unpam.ac.id/api",
@@ -632,6 +736,671 @@
       #token-runner-popup.light-theme .empty-desc { color: #64748b; }
       #token-runner-popup.light-theme .empty-icon { background: rgba(25, 118, 210, 0.04); border-color: rgba(25, 118, 210, 0.08); }
 
+      /* Presensi Shortcut Banner */
+      .presensi-shortcut-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 12px;
+        background: rgba(0, 165, 80, 0.07);
+        border: 1px solid rgba(0, 165, 80, 0.2);
+        border-radius: 9px;
+        text-decoration: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 10px;
+      }
+      .presensi-shortcut-card:hover {
+        background: rgba(0, 165, 80, 0.13);
+        border-color: rgba(0, 165, 80, 0.35);
+        transform: translateY(-1px);
+      }
+      .presensi-shortcut-icon {
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        background: rgba(0, 165, 80, 0.15);
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #00a550;
+      }
+      .presensi-shortcut-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #00a550;
+        line-height: 1.2;
+      }
+      .presensi-shortcut-sub {
+        font-size: 9.5px;
+        color: #00a550;
+        opacity: 0.65;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 1px;
+      }
+
+      /* Unified Forum Control Bar */
+      .forum-control-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .forum-filter-bar {
+        display: flex;
+        gap: 3px;
+        background: rgba(0, 0, 0, 0.35);
+        padding: 2.5px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        flex: 1;
+      }
+      .forum-filter-btn {
+        flex: 1;
+        padding: 5px 6px;
+        font-size: 10.5px;
+        font-weight: 600;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #94a3b8;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+      .forum-filter-btn:hover {
+        color: #f1f5f9;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .forum-filter-btn.active {
+        background: rgba(240, 135, 45, 0.16);
+        border-color: rgba(240, 135, 45, 0.35);
+        color: #f0872d;
+        font-weight: 700;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+      }
+      .filter-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 15px;
+        height: 15px;
+        padding: 0 4px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #94a3b8;
+        font-size: 9px;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .forum-filter-btn.active .filter-count {
+        background: #f0872d;
+        color: #ffffff;
+      }
+      .sapu-bersih-all-btn {
+        height: 29px;
+        padding: 0 10px;
+        border-radius: 7px;
+        font-size: 10.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.32);
+        color: #34d399;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+      .sapu-bersih-all-btn:hover {
+        background: #10b981;
+        color: #ffffff;
+        border-color: #10b981;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+        transform: translateY(-1px);
+      }
+
+      /* Sapu Bersih Section Micro-Btn */
+      .sapu-bersih-section-btn {
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        background: rgba(240, 135, 45, 0.12);
+        border: 1px solid rgba(240, 135, 45, 0.35);
+        color: #f0872d;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: nowrap;
+      }
+      .sapu-bersih-section-btn:hover {
+        background: #f0872d;
+        color: #ffffff;
+        border-color: #f0872d;
+        box-shadow: 0 2px 8px rgba(240, 135, 45, 0.35);
+        transform: translateY(-1px);
+      }
+      .section-done-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 7px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 700;
+        background: rgba(121, 187, 124, 0.12);
+        color: #79bb7c;
+        border: 1px solid rgba(121, 187, 124, 0.25);
+        line-height: 1.2;
+      }
+
+      /* Auto-Pilot Queue Banner */
+      .queue-banner {
+        margin-bottom: 12px;
+        padding: 12px 14px;
+        background: linear-gradient(135deg, rgba(30, 58, 138, 0.2), rgba(15, 23, 42, 0.5));
+        border: 1px solid rgba(61, 153, 227, 0.35);
+        border-radius: 10px;
+        font-size: 11px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        animation: bannerSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      @keyframes bannerSlideIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .queue-banner-step {
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.3;
+        color: #f1f5f9;
+      }
+      .queue-banner-stop-btn {
+        height: 24px;
+        padding: 0 9px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        color: #ef4444;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .queue-banner-stop-btn:hover {
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+      }
+
+      /* Completed Week Container & Cards */
+      .completed-week-container {
+        margin-top: 20px;
+      }
+      .completed-week-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        background: rgba(121, 187, 124, 0.08);
+        border: 1px solid rgba(121, 187, 124, 0.22);
+        border-radius: 9px;
+      }
+      .completed-week-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .completed-week-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        background: rgba(121, 187, 124, 0.16);
+        color: #79bb7c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+      }
+      .completed-week-heading {
+        font-weight: 700;
+        font-size: 12px;
+        color: #79bb7c;
+        line-height: 1.2;
+      }
+      .completed-week-sub {
+        font-size: 9.5px;
+        opacity: 0.75;
+        color: #a7f3d0;
+        margin-top: 2px;
+      }
+      .completed-week-pill {
+        padding: 3px 8px;
+        background: rgba(121, 187, 124, 0.18);
+        color: #79bb7c;
+        border: 1px solid rgba(121, 187, 124, 0.3);
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .completed-course-card {
+        border-left: 3px solid #79bb7c !important;
+      }
+      .completed-course-card .course-title {
+        color: #79bb7c !important;
+      }
+
+      /* Forum Reply Form & AI Bar */
+      .forum-html-preview-box {
+        display: none;
+        padding: 10px 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(0, 0, 0, 0.2);
+        color: #cbd5e1;
+        font-size: 11px;
+        line-height: 1.55;
+      }
+      .forum-topic-card {
+        margin-top: 8px;
+        padding: 10px 12px;
+        border: 1px solid rgba(61, 153, 227, 0.18);
+        border-radius: 8px;
+        font-size: 11px;
+        line-height: 1.5;
+        background: rgba(0, 0, 0, 0.15);
+      }
+      .forum-user-reply-card {
+        margin-top: 6px;
+        padding: 8px 10px;
+        border-radius: 6px;
+        background: rgba(240, 135, 45, 0.08);
+        border-left: 3px solid #f0872d;
+        font-size: 11px;
+      }
+      .forum-reply-form {
+        margin-top: 8px;
+        margin-bottom: 8px;
+        padding: 12px;
+        border: 1px solid rgba(61, 153, 227, 0.25);
+        border-radius: 9px;
+        background: rgba(15, 23, 42, 0.55);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+      }
+      .forum-reply-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .forum-reply-header-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #3d99e3;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .forum-reply-close-btn {
+        background: transparent;
+        border: none;
+        padding: 2px;
+        color: rgba(255, 255, 255, 0.45);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        border-radius: 4px;
+        transition: color 0.15s;
+      }
+      .forum-reply-close-btn:hover {
+        color: #f1f5f9;
+      }
+      .forum-reply-label {
+        font-size: 9.5px;
+        font-weight: 600;
+        color: #94a3b8;
+        display: block;
+        margin-bottom: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .custom-reply-select-wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+      .custom-reply-select-btn {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 7px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.35);
+        color: #f1f5f9;
+        font-size: 11px;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        line-height: 1.4;
+        transition: border-color 0.15s;
+      }
+      .custom-reply-select-btn:hover {
+        border-color: rgba(61, 153, 227, 0.4);
+      }
+      .custom-reply-options-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 4px;
+        max-height: 180px;
+        overflow-y: auto;
+        background: #1e293b;
+        border: 1px solid rgba(61, 153, 227, 0.3);
+        border-radius: 6px;
+        z-index: 100;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+        box-sizing: border-box;
+      }
+      .custom-reply-option-item {
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        cursor: pointer;
+        color: #f1f5f9;
+        transition: background 0.15s, color 0.15s;
+        box-sizing: border-box;
+      }
+      .custom-reply-option-item:hover {
+        background: rgba(61, 153, 227, 0.25);
+        color: #ffffff;
+      }
+      .custom-reply-option-sub {
+        padding: 8px 10px 8px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        cursor: pointer;
+        color: #94a3b8;
+        transition: background 0.15s, color 0.15s;
+        box-sizing: border-box;
+      }
+      .custom-reply-option-sub:hover {
+        background: rgba(61, 153, 227, 0.25);
+        color: #ffffff;
+      }
+      .forum-ai-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        padding: 6px 8px;
+        background: rgba(61, 153, 227, 0.08);
+        border: 1px solid rgba(61, 153, 227, 0.2);
+        border-radius: 7px;
+        flex-wrap: wrap;
+      }
+      .forum-ai-style-wrap {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex: 1;
+        min-width: 130px;
+      }
+      .forum-ai-style {
+        flex: 1;
+        height: 25px;
+        padding: 0 6px;
+        font-size: 10.5px;
+        border-radius: 5px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #f1f5f9;
+        outline: none;
+        cursor: pointer;
+      }
+      .forum-ai-actions {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+      .forum-ai-answer-btn {
+        height: 25px;
+        padding: 0 9px;
+        background: #3d99e3;
+        color: #ffffff;
+        border-radius: 5px;
+        font-size: 10.5px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 6px rgba(61, 153, 227, 0.3);
+      }
+      .forum-ai-answer-btn:hover {
+        background: #1976d2;
+      }
+      .forum-ai-question-btn {
+        height: 25px;
+        padding: 0 8px;
+        background: rgba(61, 153, 227, 0.1);
+        color: #38bdf8;
+        border: 1px solid rgba(61, 153, 227, 0.3);
+        border-radius: 5px;
+        font-size: 10.5px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .forum-ai-question-btn:hover {
+        background: rgba(61, 153, 227, 0.2);
+      }
+      .forum-ai-suggestions {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        width: 100%;
+        margin-top: 2px;
+      }
+      .forum-ai-suggestion-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 6px 8px;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        font-size: 10.5px;
+        color: #f1f5f9;
+      }
+      .forum-reply-input {
+        width: 100%;
+        box-sizing: border-box;
+        resize: vertical;
+        padding: 8px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.35);
+        color: #f1f5f9;
+        font-family: inherit;
+        font-size: 11px;
+        line-height: 1.45;
+        min-height: 65px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .forum-reply-input:focus {
+        border-color: #3d99e3;
+      }
+      .forum-rewrite-bar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+        margin-top: 1px;
+      }
+      .forum-rewrite-label {
+        font-size: 9.5px;
+        color: #94a3b8;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        margin-right: 2px;
+        font-weight: 600;
+      }
+      .forum-rewrite-btn {
+        height: 21px;
+        padding: 0 7px;
+        background: rgba(255, 255, 255, 0.05);
+        color: #cbd5e1;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+      }
+      .forum-rewrite-btn:hover {
+        background: rgba(61, 153, 227, 0.15);
+        color: #38bdf8;
+        border-color: rgba(61, 153, 227, 0.35);
+      }
+      .forum-reply-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 3px;
+      }
+      .forum-reply-btn-cancel {
+        height: 27px;
+        padding: 0 12px;
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .forum-reply-btn-cancel:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+      }
+      .forum-reply-btn-send {
+        height: 27px;
+        padding: 0 14px;
+        background: #3d99e3;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 6px rgba(61, 153, 227, 0.3);
+      }
+      .forum-reply-btn-send:hover {
+        background: #1976d2;
+      }
+
+      /* Light Theme Complete Adaptations */
+      #token-runner-popup.light-theme .presensi-shortcut-card { background: #f0fdf4; border-color: #bbf7d0; }
+      #token-runner-popup.light-theme .presensi-shortcut-card:hover { background: #dcfce7; border-color: #86efac; }
+      #token-runner-popup.light-theme .forum-filter-bar { background: #cbd5e1; border-color: #94a3b8; }
+      #token-runner-popup.light-theme .forum-filter-btn { color: #475569; }
+      #token-runner-popup.light-theme .forum-filter-btn:hover { color: #0f172a; background: rgba(255,255,255,0.5); }
+      #token-runner-popup.light-theme .forum-filter-btn.active { color: #075985; background: #ffffff; border-color: #93c5fd; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+      #token-runner-popup.light-theme .filter-count { background: #e2e8f0; color: #475569; }
+      #token-runner-popup.light-theme .forum-filter-btn.active .filter-count { background: #0284c7; color: #ffffff; }
+      #token-runner-popup.light-theme .sapu-bersih-all-btn { background: #ecfdf5; border-color: #a7f3d0; color: #059669; }
+      #token-runner-popup.light-theme .sapu-bersih-all-btn:hover { background: #10b981; color: #ffffff; border-color: #10b981; }
+      #token-runner-popup.light-theme .sapu-bersih-section-btn { background: #fff7ed; border-color: #fdba74; color: #c2410c; }
+      #token-runner-popup.light-theme .sapu-bersih-section-btn:hover { background: #f0872d; color: #ffffff; border-color: #f0872d; }
+      #token-runner-popup.light-theme .section-done-badge { background: #dcfce7; color: #166534; border-color: #86efac; }
+      #token-runner-popup.light-theme .queue-banner { background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-color: #7dd3fc; box-shadow: 0 4px 16px rgba(2, 132, 199, 0.08); }
+      #token-runner-popup.light-theme .queue-banner-step { color: #0f172a; }
+      #token-runner-popup.light-theme .queue-banner-stop-btn { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+      #token-runner-popup.light-theme .queue-banner-stop-btn:hover { background: #dc2626; color: #ffffff; }
+      #token-runner-popup.light-theme .completed-week-header { background: #f0fdf4; border-color: #bbf7d0; }
+      #token-runner-popup.light-theme .completed-week-heading { color: #166534; }
+      #token-runner-popup.light-theme .completed-week-sub { color: #15803d; }
+      #token-runner-popup.light-theme .completed-week-icon { background: #dcfce7; color: #166534; }
+      #token-runner-popup.light-theme .completed-week-pill { background: #dcfce7; color: #166534; border-color: #86efac; }
+      #token-runner-popup.light-theme .completed-course-card { border-left-color: #166534 !important; }
+      #token-runner-popup.light-theme .completed-course-card .course-title { color: #166534 !important; }
+      #token-runner-popup.light-theme .forum-html-preview-box { background: #f8fafc; border-top-color: #e2e8f0; color: #334155; }
+      #token-runner-popup.light-theme .forum-topic-card { background: #f8fafc; border-color: #cbd5e1; }
+      #token-runner-popup.light-theme .forum-user-reply-card { background: #fff7ed; border-left-color: #ea580c; color: #1e293b; }
+      #token-runner-popup.light-theme .forum-reply-form { background: #f8fafc; border-color: #cbd5e1; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05); }
+      #token-runner-popup.light-theme .forum-reply-header-title { color: #075985; }
+      #token-runner-popup.light-theme .forum-reply-close-btn { color: #64748b; }
+      #token-runner-popup.light-theme .forum-reply-close-btn:hover { color: #0f172a; }
+      #token-runner-popup.light-theme .forum-reply-label { color: #64748b; }
+      #token-runner-popup.light-theme .custom-reply-select-btn { background: #ffffff; border-color: #cbd5e1; color: #0f172a; }
+      #token-runner-popup.light-theme .custom-reply-options-list { background: #ffffff; border-color: #cbd5e1; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); }
+      #token-runner-popup.light-theme .custom-reply-option-item { color: #0f172a; border-bottom-color: #e2e8f0; }
+      #token-runner-popup.light-theme .custom-reply-option-item:hover { background: #e0f2fe; color: #0369a1; }
+      #token-runner-popup.light-theme .custom-reply-option-sub { color: #475569; border-bottom-color: #e2e8f0; }
+      #token-runner-popup.light-theme .custom-reply-option-sub:hover { background: #e0f2fe; color: #0369a1; }
+      #token-runner-popup.light-theme .forum-ai-bar { background: #f0f9ff; border-color: #bae6fd; }
+      #token-runner-popup.light-theme .forum-ai-style { background: #ffffff; border-color: #cbd5e1; color: #0f172a; }
+      #token-runner-popup.light-theme .forum-ai-question-btn { background: #ffffff; color: #0284c7; border-color: #7dd3fc; }
+      #token-runner-popup.light-theme .forum-reply-input { background: #ffffff; border-color: #cbd5e1; color: #0f172a; }
+      #token-runner-popup.light-theme .forum-rewrite-label { color: #64748b; }
+      #token-runner-popup.light-theme .forum-rewrite-btn { background: #ffffff; color: #475569; border-color: #cbd5e1; }
+      #token-runner-popup.light-theme .forum-rewrite-btn:hover { background: #f1f5f9; color: #0284c7; border-color: #7dd3fc; }
+      #token-runner-popup.light-theme .forum-ai-suggestion-item { background: #ffffff; border-color: #e2e8f0; color: #0f172a; }
+      #token-runner-popup.light-theme .forum-reply-btn-cancel { background: #ffffff; color: #475569; border-color: #cbd5e1; }
+
     `,
   };
 
@@ -641,6 +1410,7 @@
     courseDataList: [],
     isFetching: false,
     currentTab: "forum-tab",
+    forumFilterMode: "all",
   };
 
   const Utils = {
@@ -793,10 +1563,97 @@
         }
       } catch (e) {}
     },
+    updateModelLimit(model, isLimited) {
+      try {
+        const statsKey = "gemini_model_stats";
+        const raw = localStorage.getItem(statsKey);
+        const stats = raw ? JSON.parse(raw) : {};
+        if (!stats[model]) stats[model] = {};
+        stats[model].limited = isLimited ? true : false;
+        localStorage.setItem(statsKey, JSON.stringify(stats));
+      } catch (e) {}
+    },
     formatNumber(num) {
       if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
       if (num >= 1000) return (num / 1000).toFixed(1) + "K";
       return num;
+    },
+    cleanForumAnswer(rawText) {
+      if (!rawText || typeof rawText !== "string") return "";
+
+      let cleaned = rawText
+        .replace(/^```(?:markdown)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .replace(/\*\*(.*?)\*\*/g, "$1")
+        .replace(/\*(.*?)\*/g, "$1")
+        .replace(/^#+\s+/gm, "")
+        .trim();
+
+      // 1. Strip introductory AI boilerplate ("Berikut jawabannya...", "Tentu, ini analisis saya...", dll)
+      cleaned = cleaned.replace(
+        /^(?:berikut\s+(?:adalah\s+)?(?:jawaban|rangkuman|tanggapan|ulasan|analisis)[^:\n]*:?\s*|tentu,?\s+[^:\n]*:?\s*|baik(?:lah)?,?\s+[^:\n]*:?\s*)/i,
+        "",
+      );
+
+      // 2. Strip initial greetings (Halo, Selamat pagi/siang/sore/malam, Assalamu'alaikum)
+      cleaned = cleaned.replace(
+        /^(?:halo|hai|selamat\s+(?:pagi|siang|sore|malam)|assalamu['’]?alaikum(?:\s+wr\.?\s*wb\.?)?)[^,\n]*[,\.\n\:\-]?\s*/i,
+        "",
+      );
+
+      // 3. Strip initial direct address to lecturer / peers
+      cleaned = cleaned.replace(
+        /^(?:kepada\s+)?(?:yth\.?\s+)?(?:bapak(?:\/ibu)?|ibu|pak|bu|bpk|dosen(?:\s+pengampu)?|rekan(?:\-rekan)?(?:\s+mahasiswa)?|saudara(?:\/i)?|teman(?:\-teman)?)\s*(?:dosen)?\s*(?:[A-Z][a-z]+|\d{8,14})?[,\.\:\-]?\s*/i,
+        "",
+      );
+
+      // 4. Strip 'menanggapi pertanyaan rekan 2310... / Budi...'
+      cleaned = cleaned.replace(
+        /^(?:menanggapi|merespons|membalas)\s+(?:pertanyaan|pendapat|tanggapan|argumen|apa\s+yang\s+disampaikan)?\s*(?:dari|oleh)?\s*(?:rekan|saudara|teman|bapak|ibu|pak|bu)?\s*(?:\d{8,14}|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)?[^,\n]*[,\.\n\:\-]?\s*/i,
+        "",
+      );
+
+      // 5. Strip 'Izin menjawab' prefix temporarily if present to clean any object/greeting that followed it
+      cleaned = cleaned.replace(/^izin\s+menjawab[,.\s]*/i, "");
+
+      // If after 'izin menjawab' there was still a greeting or object address:
+      cleaned = cleaned.replace(
+        /^(?:kepada\s+)?(?:yth\.?\s+)?(?:bapak(?:\/ibu)?|ibu|pak|bu|bpk|dosen(?:\s+pengampu)?|rekan(?:\-rekan)?(?:\s+mahasiswa)?|saudara(?:\/i)?|teman(?:\-teman)?)\s*(?:dosen)?\s*(?:[A-Z][a-z]+|\d{8,14})?[,\.\:\-]?\s*/i,
+        "",
+      );
+      cleaned = cleaned.replace(
+        /^(?:menanggapi|merespons|membalas)\s+(?:pertanyaan|pendapat|tanggapan|argumen|apa\s+yang\s+disampaikan)?\s*(?:dari|oleh)?\s*(?:rekan|saudara|teman|bapak|ibu|pak|bu)?\s*(?:\d{8,14}|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)?[^,\n]*[,\.\n\:\-]?\s*/i,
+        "",
+      );
+
+      // 6. Strip any accidental NIM numbers or phrases like "rekan 23101140..." anywhere in text
+      cleaned = cleaned.replace(
+        /(?:\brekan|\bsaudara|\bteman|\bmahasiswa)?\s*\(?\b(?:NIM\s*)?\d{8,14}\b\)?/gi,
+        "",
+      );
+
+      // 7. Clean trailing punctuation and multiple spaces left behind
+      cleaned = cleaned
+        .replace(/[ \t]{2,}/g, " ")
+        .replace(/^\s*[,.;:\-]\s*/, "")
+        .trim();
+
+      // 8. Re-attach 'Izin menjawab,' cleanly
+      if (cleaned.length > 0) {
+        if (/^\d+\./.test(cleaned)) {
+          cleaned = `Izin menjawab,\n${cleaned}`;
+        } else {
+          const firstWord = cleaned.split(/\s+/)[0] || "";
+          if (/^[A-Z][a-z]+$/.test(firstWord)) {
+            cleaned = cleaned.charAt(0).toLowerCase() + cleaned.slice(1);
+          }
+          cleaned = `Izin menjawab, ${cleaned}`;
+        }
+      } else {
+        cleaned = "Izin menjawab, ";
+      }
+
+      return cleaned.trim();
     },
     injectMaterialIcons() {
       if (document.getElementById("material-icons-css")) return;
@@ -1009,7 +1866,7 @@ ${questionText}`;
           kode_section: sectionCode,
           kode_course: courseCode,
           kuesioner: questions.map((question) => ({
-            id_kuesioner: question.id,
+            id_kuesioner: question.id || question.id_kuesioner,
             jawaban: 1,
           })),
         }),
@@ -1033,6 +1890,60 @@ ${questionText}`;
       } catch (e) {
         return null;
       }
+    },
+    async askGeminiForum(prompt, isQuestionMode = false) {
+      const apiKey = this.getGeminiApiKey();
+      const modelRaw =
+        localStorage.getItem("gemini_model") || "gemini-2.5-flash-lite";
+      const model = modelRaw.replace(/"/g, "").trim();
+      const temperature = typeof isQuestionMode === "number" ? isQuestionMode : 0.7;
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature,
+              maxOutputTokens: 2048,
+              topP: 0.95,
+              topK: 40,
+            },
+          }),
+        },
+      );
+
+      if (!res.ok) {
+        if (res.status === 429) {
+          Utils.updateModelLimit(model, true);
+          throw new Error(
+            "Rate Limit Tercapai! Kuota API model ini sudah habis. Silakan ganti Model atau API Key lain di menu Pengaturan (Mentari Mod).",
+          );
+        }
+        let errMsg = `Gemini API Error: ${res.status}`;
+        try {
+          const errData = await res.json();
+          if (errData?.error?.message) errMsg = errData.error.message;
+        } catch (e) {}
+        throw new Error(errMsg);
+      }
+
+      Utils.updateQuota(res.headers);
+      Utils.updateModelLimit(model, false);
+      const data = await res.json();
+      const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      if (isQuestionMode === true) {
+        return answer
+          .replace(/^```(?:markdown)?\s*/i, "")
+          .replace(/\s*```$/i, "")
+          .replace(/\*\*(.*?)\*\*/g, "$1")
+          .replace(/\*(.*?)\*/g, "$1")
+          .replace(/^#+\s+/gm, "")
+          .trim();
+      }
+      return Utils.cleanForumAnswer(answer);
     },
   };
 
@@ -1102,34 +2013,799 @@ ${questionText}`;
     },
   };
 
+  const WeeklyCompletionManager = {
+    getCurrentWeekWindow(now = new Date()) {
+      const d = new Date(now);
+      const day = d.getDay();
+      const diffToMonday = (day + 6) % 7;
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - diffToMonday);
+      weekStart.setHours(0, 0, 0, 0);
+
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+
+      const yyyy = weekStart.getFullYear();
+      const mm = String(weekStart.getMonth() + 1).padStart(2, "0");
+      const dd = String(weekStart.getDate()).padStart(2, "0");
+      const weekKey = `${yyyy}-${mm}-${dd}`;
+
+      const monthNames = [
+        "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+        "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+      ];
+      const label = `Senin, ${weekStart.getDate()} ${monthNames[weekStart.getMonth()]} – Minggu, ${weekEnd.getDate()} ${monthNames[weekEnd.getMonth()]} ${weekEnd.getFullYear()}`;
+
+      return { weekStart, weekEnd, weekKey, label };
+    },
+
+    getStorage() {
+      try {
+        const raw = localStorage.getItem(Config.STORAGE_KEYS.COMPLETED_TRACKER);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        return {};
+      }
+    },
+
+    saveStorage(data) {
+      try {
+        localStorage.setItem(Config.STORAGE_KEYS.COMPLETED_TRACKER, JSON.stringify(data));
+      } catch (e) {}
+    },
+
+    markCompleted(courseCode, sectionCode, sort) {
+      const { weekKey } = this.getCurrentWeekWindow();
+      const store = this.getStorage();
+      const key = `${courseCode}_${sectionCode}`;
+      store[key] = {
+        weekKey,
+        completedAt: Date.now(),
+        sort: sort || 0,
+        courseCode,
+        sectionCode,
+      };
+      this.saveStorage(store);
+    },
+
+    isKuesioner(i) {
+      if (!i) return false;
+      const kt = String(i.kode_template || "").toUpperCase();
+      const tp = String(i.tipe || "").toUpperCase();
+      const jd = String(i.judul || "").toLowerCase();
+      return (
+        kt.includes("KUESIONER") ||
+        kt.includes("KUISIONER") ||
+        tp.includes("QUESIONER") ||
+        tp.includes("KUESIONER") ||
+        tp.includes("KUISIONER") ||
+        /kue?sioner|angket|evaluasi\s*dosen/i.test(jd)
+      );
+    },
+
+    isOffline(section) {
+      if (!section) return false;
+      const title = String(section.nama_section || "").toLowerCase();
+      if (/\b(tatap\s*muka|offline|luring)\b/i.test(title)) return true;
+      if (section.metode && /offline|luring|tatap/i.test(section.metode)) return true;
+      if (section.jenis_perkuliahan && /offline|luring|tatap/i.test(section.jenis_perkuliahan)) return true;
+      if (section.tipe && /offline|luring|tatap/i.test(section.tipe)) return true;
+      return false;
+    },
+
+    isSectionCompleted(section) {
+      if (!section || !section.sub_section) return false;
+      const items = section.sub_section;
+      const kuesioner = items.find((i) => this.isKuesioner(i));
+      const forum = items.find((i) => i.kode_template === "FORUM_DISKUSI" && i.id);
+      const postTest = items.find((i) => i.kode_template === "POST_TEST" && i.id);
+
+      // 1. KUESIONER ADALAH SYARAT MUTLAK ABSENSI DI MENTARI UNPAM
+      // Jika pertemuan memiliki kuesioner, MAKA KUESIONER HARUS SELESAI (completion === true).
+      // Jangan pernah anggap section selesai jika kuesioner belum terisi!
+      if (kuesioner && kuesioner.completion !== true) {
+        return false;
+      }
+
+      // 2. FORUM DISKUSI HARUS SELESAI
+      if (
+        forum &&
+        forum.completion !== true &&
+        !forum.warningAlert?.includes("Soal forum diskusi belum tersedia")
+      ) {
+        return false;
+      }
+
+      // 3. POST-TEST HARUS SELESAI
+      if (postTest && postTest.completion !== true) {
+        return false;
+      }
+
+      // 4. Jika ada kuesioner dan kuesioner sudah selesai
+      if (kuesioner && kuesioner.completion === true) {
+        return true;
+      }
+
+      // Jika pertemuan tidak punya kuesioner
+      if (forum && forum.completion === true && (!postTest || postTest.completion === true)) {
+        return true;
+      }
+
+      return false;
+    },
+
+    parseDate(dateVal) {
+      if (!dateVal) return null;
+      const d = new Date(dateVal);
+      return isNaN(d.getTime()) ? null : d;
+    },
+
+    isSectionInCurrentWeek(section, course, allSections) {
+      // 1. SEMBUNYIKAN PERTEMUAN OFFLINE / TATAP MUKA / LURING
+      // Pertemuan offline tidak memiliki aktivitas perkuliahan e-learning minggu ini.
+      if (this.isOffline(section)) {
+        return false;
+      }
+
+      const { weekStart, weekEnd, weekKey } = this.getCurrentWeekWindow();
+
+      // 2. CEK JADWAL ASLI DARI API (TANGGAL MULAI / SELESAI / WAKTU BUKA / WAKTU TUTUP)
+      // JANGAN sertakan created_at atau updated_at karena itu hanya timestamp database
+      const scheduleDates = [];
+      const dateFields = [
+        section.tanggal_mulai, section.tanggal_selesai,
+        section.start_date, section.end_date,
+        section.waktu_buka, section.waktu_tutup
+      ];
+      (section.sub_section || []).forEach((sub) => {
+        dateFields.push(
+          sub.tanggal_mulai, sub.tanggal_selesai,
+          sub.start_date, sub.end_date,
+          sub.waktu_buka, sub.waktu_tutup,
+          sub.setting_quiz?.start_date, sub.setting_quiz?.end_date
+        );
+      });
+
+      for (const raw of dateFields) {
+        const parsed = this.parseDate(raw);
+        if (parsed) scheduleDates.push(parsed);
+      }
+
+      if (scheduleDates.length > 0) {
+        // Cek apakah tanggal jadwal berada dalam minggu ini
+        const hasDateThisWeek = scheduleDates.some(
+          (d) => d >= weekStart && d <= weekEnd
+        );
+        if (hasDateThisWeek) {
+          return true;
+        }
+
+        // Cek apakah rentang tanggal pertemuan melingkupi minggu ini
+        const startDate = this.parseDate(section.tanggal_mulai || section.start_date || section.waktu_buka);
+        const endDate = this.parseDate(section.tanggal_selesai || section.end_date || section.waktu_tutup);
+        if (startDate && endDate && startDate <= weekEnd && endDate >= weekStart) {
+          return true;
+        }
+
+        // PENTING: Jika jadwal resmi ada tetapi DI LUAR minggu ini (minggu lalu atau minggu depan):
+        // JANGAN tampilkan di tab Selesai Minggu Ini!
+        return false;
+      }
+
+      // 3. JIKA SAMA SEKALI TIDAK ADA TANGGAL DARI API:
+      // Hanya tampilkan jika tercatat selesai pada minggu ini oleh tracker browser
+      const store = this.getStorage();
+      const trackKey = `${course.kode_course}_${section.kode_section}`;
+      const saved = store[trackKey];
+
+      if (saved && saved.weekKey === weekKey) {
+        return true;
+      }
+
+      // Jangan pernah berasumsi matkul 3 SKS punya 2 pertemuan tanpa jadwal!
+      return false;
+    },
+  };
+
+  const TaskQueueEngine = {
+    isRunning: false,
+    abortRequested: false,
+
+    updateBanner(courseTitle, sectionTitle, stepText, percent) {
+      let banner = document.getElementById("queue-progress-banner");
+      const container = document.getElementById("forum-tab-tab");
+      if (!container) return;
+
+      if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "queue-progress-banner";
+        banner.className = "queue-banner";
+        container.prepend(banner);
+      }
+
+      banner.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+            <span class="ms mentari-spin" style="color:#3d99e3; font-size:18px; flex-shrink:0;">autorenew</span>
+            <div style="min-width:0;">
+              <div style="font-weight:700; color:#3d99e3; font-size:11.5px; line-height:1.2;">Auto-Pilot Queue Running</div>
+              <div style="opacity:0.75; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;">${courseTitle} &bull; ${sectionTitle}</div>
+            </div>
+          </div>
+          <button type="button" class="queue-banner-stop-btn" title="Hentikan Antrean">
+            <span class="ms" style="font-size:12px;">stop</span> Hentikan
+          </button>
+        </div>
+        <div class="queue-banner-step">${stepText}</div>
+        <div style="width:100%; height:5px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden;">
+          <div style="width:${percent}%; height:100%; background:linear-gradient(90deg, #3d99e3, #79bb7c); border-radius:4px; transition:width 0.3s ease;"></div>
+        </div>
+      `;
+
+      banner.querySelector(".queue-banner-stop-btn").onclick = (e) => {
+        e.stopPropagation();
+        this.abortRequested = true;
+        Utils.toast("Menghentikan antrean...");
+      };
+    },
+
+    removeBanner() {
+      document.getElementById("queue-progress-banner")?.remove();
+    },
+
+    async executeQuizWithAI(quizId, quizTitle, onProgress) {
+      if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+      onProgress?.("Sedang memulai quiz...");
+      try {
+        await ApiService.startQuiz(quizId);
+      } catch (startErr) {
+        console.warn("[Mentari AutoPilot] startQuiz warning (might be already active):", startErr);
+      }
+
+      if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+      onProgress?.("Sedang mencari soal quiz...");
+      const questions = (await ApiService.fetchQuizQuestions(quizId))?.data || [];
+      if (!questions.length) throw new Error("Soal quiz kosong atau belum dibuka oleh dosen");
+
+      if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+      onProgress?.("AI sedang menjawab quiz...");
+      const answers = await ApiService.askGeminiQuiz(
+        ApiService.getGeminiApiKey(),
+        questions,
+      );
+      const answersByQuestion = new Map(
+        answers.map((answer) => [answer.question_id, answer]),
+      );
+
+      for (const question of questions) {
+        if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+        const aiAnswer = answersByQuestion.get(question.id);
+        const isEssay = question.jenis_soal?.toUpperCase() === "ESSAY";
+        let payload;
+
+        if (isEssay) {
+          const answerText = String(aiAnswer?.answer_text || "").trim();
+          if (!answerText)
+            throw new Error(`Jawaban essay AI kosong untuk ${question.id}`);
+          payload = {
+            id_trx_quiz_user_soal: question.id,
+            id_jawaban: null,
+            jawaban: answerText,
+          };
+        } else {
+          const answerIndex = aiAnswer?.answer_index;
+          const selectedAnswer =
+            question.list_jawaban?.[Number(answerIndex) - 1];
+          if (!selectedAnswer?.id)
+            throw new Error(`Jawaban AI tidak valid untuk ${question.id}`);
+          payload = {
+            id_trx_quiz_user_soal: question.id,
+            id_jawaban: selectedAnswer.id,
+            jawaban: null,
+          };
+        }
+
+        onProgress?.("Sedang mengirim jawaban quiz...");
+        await ApiService.submitQuizAnswer(payload);
+      }
+
+      const quizDelaySetting = Utils.get(Config.STORAGE_KEYS.QUIZ_DELAY) || "0";
+      const delayMs = Utils.parseMinutesToMs(quizDelaySetting);
+      if (delayMs > 0) {
+        await Utils.countdownDelay(delayMs, (formattedTime) => {
+          if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+          onProgress?.(`Menunggu jeda quiz: ${formattedTime}...`);
+        });
+      }
+
+      if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+      onProgress?.("Sedang menyelesaikan quiz...");
+      await ApiService.endQuiz(quizId);
+    },
+
+    async executeForumWithAI(forumItem, courseCode, sectionCode, onProgress) {
+      if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+      if (!forumItem?.id) return;
+      if (forumItem.warningAlert?.includes("Soal forum diskusi belum tersedia")) {
+        onProgress?.("Soal forum diskusi belum tersedia.");
+        return;
+      }
+
+      const currentNim = String(
+        State.userInfo?.username || State.userInfo?.userId || ""
+      ).trim();
+
+      onProgress?.("Memeriksa topik forum diskusi...");
+      const res = await ApiService.fetchForumTopics(forumItem.id);
+      const topics = (res.topics || []).filter(
+        (t) => t.id_trx_course_sub_section === forumItem.id
+      );
+
+      if (!topics.length) {
+        onProgress?.("Tidak ada topik forum aktif.");
+        return;
+      }
+
+      for (let tIdx = 0; tIdx < topics.length; tIdx++) {
+        if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+        const topic = topics[tIdx];
+        const topicTitle = topic.judul || `Topik ${tIdx + 1}`;
+        onProgress?.(`Mengecek balasan: ${topicTitle}...`);
+
+        let result = await ApiService.fetchForumReplies(topic.id);
+        let root = result?.id === topic.id ? result : null;
+        let replies = root?.data || result?.data || [];
+
+        const isOwnReply = (reply) => {
+          const nim = String(reply.nim || reply.mahasiswa?.nim || "").trim();
+          return Boolean(currentNim) && nim === currentNim;
+        };
+
+        const getStudentPeers = (allReplies) => {
+          return (allReplies || []).filter((reply) => {
+            const nim = String(reply.nim || reply.mahasiswa?.nim || "").trim();
+            return (
+              Number(reply.reply_level) > 0 &&
+              reply.id_dosen == null &&
+              Boolean(nim) &&
+              nim !== currentNim
+            );
+          });
+        };
+
+        let myReplies = replies.filter(isOwnReply);
+
+        if (myReplies.length >= 2) {
+          onProgress?.(`Topik "${topicTitle}" sudah memiliki ${myReplies.length} balasan, lewati.`);
+          await new Promise((r) => setTimeout(r, 400));
+          continue;
+        }
+
+        const rawContent = root?.konten || topic.konten || forumItem.konten || "";
+        const cleanTopicContent = ForumRenderer.cleanForumText(rawContent);
+
+        let studentPeers = getStudentPeers(replies);
+        let peerSampleTexts = studentPeers
+          .slice(0, 5)
+          .map((r) => ForumRenderer.cleanForumText(r.konten || ""))
+          .filter(Boolean);
+
+        let firstAnswerText = "";
+
+        // BALASAN 1: Jawaban utama ke topik diskusi jika belum pernah membalas
+        if (myReplies.length === 0) {
+          if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+          onProgress?.(`[Balasan 1/2] AI menulis jawaban utama untuk "${topicTitle}"...`);
+
+          const prompt1 = Config.PROMPTS_FORUM.ANSWER(
+            cleanTopicContent,
+            "natural",
+            peerSampleTexts
+          );
+          const answer1 = await ApiService.askGeminiForum(prompt1);
+          if (!answer1 || answer1.trim().length === 0) {
+            throw new Error("AI gagal menghasilkan jawaban forum");
+          }
+          firstAnswerText = answer1.trim();
+
+          onProgress?.(`[Balasan 1/2] Mengirim jawaban utama ke forum...`);
+          await ApiService.submitForumReply({
+            id_topic: topic.id,
+            id_post: topic.id,
+            konten: firstAnswerText,
+            judul: "RE " + (root?.judul || topic.judul || "Forum Diskusi"),
+          });
+
+          onProgress?.(`[Balasan 1/2] Terkirim! Menjeda 2.5s sebelum tanggapan kedua...`);
+          await new Promise((r) => setTimeout(r, 2500));
+
+          // Refresh replies agar status dan peer terupdate
+          try {
+            result = await ApiService.fetchForumReplies(topic.id);
+            root = result?.id === topic.id ? result : null;
+            replies = root?.data || result?.data || [];
+            studentPeers = getStudentPeers(replies);
+            myReplies = replies.filter(isOwnReply);
+          } catch (e) {
+            // Non-blocking
+          }
+        } else {
+          firstAnswerText = ForumRenderer.cleanForumText(myReplies[0].konten || "");
+        }
+
+        // BALASAN 2: Tanggapan ke rekan sekelas (minimal 2 reply) atau elaborasi lanjutan
+        if (myReplies.length < 2) {
+          if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+
+          // Cari komentar rekan sekelas yang bisa ditanggapi (prioritas level 1)
+          const targetPeer = studentPeers.find((p) => Number(p.reply_level) === 1) || studentPeers[0];
+
+          if (targetPeer) {
+            const peerContent = ForumRenderer.cleanForumText(targetPeer.konten || "");
+
+            onProgress?.(`[Balasan 2/2] AI menyusun tanggapan diskusi forum...`);
+            const prompt2 = Config.PROMPTS_FORUM.PEER_RESPONSE(
+              cleanTopicContent,
+              peerContent
+            );
+            const answer2 = await ApiService.askGeminiForum(prompt2);
+
+            onProgress?.(`[Balasan 2/2] Mengirim tanggapan ke forum...`);
+            await ApiService.submitForumReply({
+              id_topic: topic.id,
+              id_post: targetPeer.id,
+              konten: answer2.trim(),
+              judul: "RE " + (root?.judul || topic.judul || "Forum Diskusi"),
+            });
+          } else {
+            // Jika belum ada teman sekelas yang membalas, kirim elaborasi lanjutan ke topik
+            onProgress?.(`[Balasan 2/2] AI menyusun elaborasi lanjutan topik...`);
+            const prompt2 = Config.PROMPTS_FORUM.FOLLOW_UP(
+              cleanTopicContent,
+              firstAnswerText
+            );
+            const answer2 = await ApiService.askGeminiForum(prompt2);
+
+            onProgress?.(`[Balasan 2/2] Mengirim elaborasi lanjutan ke forum...`);
+            await ApiService.submitForumReply({
+              id_topic: topic.id,
+              id_post: topic.id,
+              konten: answer2.trim(),
+              judul: "RE " + (root?.judul || topic.judul || "Forum Diskusi"),
+            });
+          }
+
+          onProgress?.(`Topik "${topicTitle}" selesai (minimal 2 balasan terpenuhi).`);
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      }
+    },
+
+    async executeKuesionerAuto(courseCode, sectionCode, onProgress) {
+      if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+      onProgress?.("Mengambil kuesioner evaluasi...");
+
+      let questions = [];
+      let lastError = null;
+
+      // Coba fetch kuesioner hingga 3 kali dengan jeda untuk sinkronisasi server
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+        try {
+          const result = await ApiService.fetchKuesioner(courseCode, sectionCode);
+          if (Array.isArray(result)) {
+            questions = result;
+          } else if (Array.isArray(result?.kuesioner)) {
+            questions = result.kuesioner;
+          } else if (Array.isArray(result?.data)) {
+            questions = result.data;
+          } else if (Array.isArray(result?.questions)) {
+            questions = result.questions;
+          }
+
+          if (questions.length > 0) {
+            break;
+          }
+
+          // Cek jika API mengindikasikan sudah pernah diisi
+          if (
+            result?.status === "already_submitted" ||
+            result?.is_submitted ||
+            result?.message?.toLowerCase().includes("sudah") ||
+            result?.message?.toLowerCase().includes("selesai")
+          ) {
+            onProgress?.("Kuesioner sudah terisi sebelumnya.");
+            return true;
+          }
+        } catch (err) {
+          lastError = err;
+          console.warn(`[Mentari AutoPilot] fetchKuesioner attempt ${attempt} warning:`, err);
+        }
+
+        if (attempt < 3) {
+          onProgress?.(`Sinkronisasi kuesioner (${attempt}/3)...`);
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+      }
+
+      if (!questions.length) {
+        if (lastError) throw lastError;
+        onProgress?.("Tidak ada butir kuesioner yang perlu diisi.");
+        return true;
+      }
+
+      if (this.abortRequested) throw new Error("Antrean dihentikan oleh pengguna");
+      onProgress?.(`Mengirim jawaban kuesioner (${questions.length} butir)...`);
+      await ApiService.submitKuesioner(courseCode, sectionCode, questions);
+      onProgress?.("Kuesioner berhasil diisi & tersimpan!");
+      await new Promise((r) => setTimeout(r, 800));
+      return true;
+    },
+
+    async runSectionAutoPilot(section, course) {
+      if (this.isRunning) {
+        Utils.toast("Antrean lain sedang berjalan!");
+        return;
+      }
+      this.isRunning = true;
+      this.abortRequested = false;
+
+      const courseTitle = course.coursename || course.nama_course || course.kode_course;
+      const sectionTitle = section.nama_section || `Pertemuan ${section.sort || ""}`;
+
+      try {
+        const items = section.sub_section || [];
+        const preTest = items.find(
+          (i) => i.kode_template === "PRE_TEST" && i.id && i.completion !== true
+        );
+        const forum = items.find(
+          (i) =>
+            i.kode_template === "FORUM_DISKUSI" &&
+            i.id &&
+            !i.warningAlert?.includes("Soal forum diskusi belum tersedia")
+        );
+        const postTest = items.find(
+          (i) => i.kode_template === "POST_TEST" && i.id && i.completion !== true
+        );
+        const kuesionerItem = items.find(
+          (i) => WeeklyCompletionManager.isKuesioner(i)
+        );
+
+        // Urutan eksekusi sekuensial terarah: Pre-Test -> Forum Diskusi -> Post-Test -> Kuesioner
+        const steps = [];
+        if (preTest) steps.push({ type: "PRE_TEST", name: "Pre-Test", item: preTest });
+        if (forum) steps.push({ type: "FORUM", name: "Forum Diskusi", item: forum });
+        if (postTest) steps.push({ type: "POST_TEST", name: "Post-Test", item: postTest });
+
+        // KUESIONER ADALAH TAHAP AKHIR MUTLAK UNTUK ABSENSI MENTARI
+        // Selalu sertakan kuesioner jika belum selesai atau ada di pertemuan ini
+        if (!kuesionerItem || kuesionerItem.completion !== true) {
+          steps.push({ type: "KUESIONER", name: "Kuesioner", item: kuesionerItem || null });
+        }
+
+        if (!steps.length) {
+          Utils.toast("Semua tugas pada pertemuan ini sudah diselesaikan.");
+          this.isRunning = false;
+          return;
+        }
+
+        let kuesionerAttempted = false;
+        let kuesionerSuccess = false;
+
+        const totalSteps = steps.length;
+        for (let idx = 0; idx < totalSteps; idx++) {
+          if (this.abortRequested) break;
+          const currentStep = steps[idx];
+          const stepNum = idx + 1;
+          const percent = Math.round((idx / totalSteps) * 100);
+
+          try {
+            if (currentStep.type === "PRE_TEST") {
+              this.updateBanner(courseTitle, sectionTitle, `[${stepNum}/${totalSteps}] Pre-Test: Menjawab Soal AI...`, percent);
+              await this.executeQuizWithAI(currentStep.item.id, currentStep.item.judul, (txt) => {
+                this.updateBanner(courseTitle, sectionTitle, `[${stepNum}/${totalSteps}] Pre-Test: ${txt}`, percent);
+              });
+            } else if (currentStep.type === "FORUM") {
+              this.updateBanner(courseTitle, sectionTitle, `[${stepNum}/${totalSteps}] Forum AI (Min 2 Balasan): Memeriksa...`, percent);
+              await this.executeForumWithAI(currentStep.item, course.kode_course, section.kode_section, (txt) => {
+                this.updateBanner(courseTitle, sectionTitle, `[${stepNum}/${totalSteps}] Forum: ${txt}`, percent);
+              });
+            } else if (currentStep.type === "POST_TEST") {
+              this.updateBanner(courseTitle, sectionTitle, `[${stepNum}/${totalSteps}] Post-Test: Menjawab Soal AI...`, percent);
+              await this.executeQuizWithAI(currentStep.item.id, currentStep.item.judul, (txt) => {
+                this.updateBanner(courseTitle, sectionTitle, `[${stepNum}/${totalSteps}] Post-Test: ${txt}`, percent);
+              });
+              // Jeda aman setelah Post-Test agar server Mentari sempat mencatat status sebelum kuesioner
+              await new Promise((r) => setTimeout(r, 1200));
+            } else if (currentStep.type === "KUESIONER") {
+              kuesionerAttempted = true;
+              this.updateBanner(courseTitle, sectionTitle, `[${stepNum}/${totalSteps}] Mengisi Kuesioner Otomatis...`, percent);
+              await this.executeKuesionerAuto(course.kode_course, section.kode_section, (txt) => {
+                this.updateBanner(courseTitle, sectionTitle, `[${stepNum}/${totalSteps}] Kuesioner: ${txt}`, percent);
+              });
+              kuesionerSuccess = true;
+              if (currentStep.item) currentStep.item.completion = true;
+              if (kuesionerItem) kuesionerItem.completion = true;
+            }
+          } catch (stepErr) {
+            if (this.abortRequested) break;
+            console.warn(`[Mentari AutoPilot] Step ${currentStep.name} error:`, stepErr);
+            Utils.toast(`[${currentStep.name}] ${stepErr.message || "Dilewati"}, lanjut tugas berikutnya...`);
+            await new Promise((r) => setTimeout(r, 1200));
+          }
+        }
+
+        if (!this.abortRequested) {
+          // FATAL GUARD ABSENSI: Jika kuesioner dicoba tetapi gagal (dan belum selesai):
+          // JANGAN tandai section sebagai selesai! Berikan peringatan agar mahasiswa tidak kena alfa!
+          const kuesionerFailed = kuesionerAttempted && !kuesionerSuccess && (!kuesionerItem || kuesionerItem.completion !== true);
+          if (kuesionerFailed) {
+            this.updateBanner(courseTitle, sectionTitle, `Perhatian: Kuesioner belum terisi!`, 100);
+            Utils.toast(`⚠️ Perhatian: Kuesioner ${sectionTitle} belum berhasil terisi otomatis. Absensi belum tercatat! Silakan klik tombol Kuesioner manual.`);
+          } else {
+            this.updateBanner(courseTitle, sectionTitle, `Selesai! Mencatat penyelesaian...`, 100);
+            WeeklyCompletionManager.markCompleted(course.kode_course, section.kode_section, section.sort);
+            Utils.successToast(`⚡ Sapu Bersih selesai untuk ${sectionTitle}!`);
+          }
+          setTimeout(() => App.refreshData(true), 800);
+        } else {
+          Utils.toast("Antrean Sapu Bersih dihentikan.");
+        }
+      } catch (err) {
+        console.error("[Mentari] Error runSectionAutoPilot:", err);
+        Utils.toast(`Sapu Bersih gagal: ${err.message}`);
+      } finally {
+        this.isRunning = false;
+        this.abortRequested = false;
+        setTimeout(() => this.removeBanner(), 1500);
+      }
+    },
+
+    async runAllKuesionerAutoPilot(courses) {
+      if (this.isRunning) {
+        Utils.toast("Antrean lain sedang berjalan!");
+        return;
+      }
+      this.isRunning = true;
+      this.abortRequested = false;
+
+      try {
+        const pendingKuesioner = [];
+        courses.forEach((c) => {
+          (c.data || []).forEach((s) => {
+            if (WeeklyCompletionManager.isOffline(s)) return;
+            const kuesioner = (s.sub_section || []).find(
+              (i) => WeeklyCompletionManager.isKuesioner(i) && i.completion !== true
+            );
+            if (kuesioner && c.kode_course && s.kode_section) {
+              pendingKuesioner.push({ course: c, section: s, item: kuesioner });
+            }
+          });
+        });
+
+        if (!pendingKuesioner.length) {
+          Utils.toast("Semua kuesioner sudah terisi!");
+          this.isRunning = false;
+          return;
+        }
+
+        const total = pendingKuesioner.length;
+        for (let i = 0; i < total; i++) {
+          if (this.abortRequested) break;
+          const { course, section, item } = pendingKuesioner[i];
+          const percent = Math.round(((i + 1) / total) * 100);
+          const courseTitle = course.coursename || course.kode_course;
+          const sectionTitle = section.nama_section || `Pertemuan ${section.sort || ""}`;
+
+          this.updateBanner(
+            "Sapu Bersih Kuesioner",
+            `[${i + 1}/${total}] ${courseTitle} - ${sectionTitle}`,
+            "Mengirim kuesioner...",
+            percent
+          );
+
+          try {
+            await this.executeKuesionerAuto(course.kode_course, section.kode_section);
+            if (item) item.completion = true;
+            if (WeeklyCompletionManager.isSectionCompleted(section)) {
+              WeeklyCompletionManager.markCompleted(course.kode_course, section.kode_section, section.sort);
+            }
+          } catch (e) {
+            console.warn(`[Mentari] Gagal kuesioner ${sectionTitle}:`, e);
+          }
+          await new Promise((r) => setTimeout(r, 400));
+        }
+
+        if (!this.abortRequested) {
+          Utils.successToast(`🚀 Berhasil mengisi ${total} kuesioner!`);
+          setTimeout(() => App.refreshData(true), 800);
+        } else {
+          Utils.toast("Pengisian kuesioner dibatalkan.");
+        }
+      } catch (err) {
+        Utils.toast(`Gagal sapu bersih kuesioner: ${err.message}`);
+      } finally {
+        this.isRunning = false;
+        this.abortRequested = false;
+        setTimeout(() => this.removeBanner(), 1500);
+      }
+    },
+  };
+
   const ForumRenderer = {
     render(data) {
       const el = document.getElementById("forum-tab-tab");
       if (!el) return;
 
+      const currentFilter = State.forumFilterMode || "all";
+
+      // Process courses and sections
+      const processedCourses = data.map((c) => {
+        const allSections = c.data || [];
+        const incompleteSections = allSections.filter((s) => {
+          if (!s.sub_section) return false;
+          if (WeeklyCompletionManager.isOffline(s)) return false;
+          const forum = s.sub_section.find(
+            (i) => i.kode_template === "FORUM_DISKUSI" && i.id
+          );
+          const kuesioner = s.sub_section.find(
+            (i) => WeeklyCompletionManager.isKuesioner(i)
+          );
+          if (!forum && !kuesioner) return false;
+          if (forum?.warningAlert?.includes("Soal forum diskusi belum tersedia"))
+            return false;
+          return !WeeklyCompletionManager.isSectionCompleted(s);
+        });
+
+        const completedSections = allSections.filter((s) => {
+          if (WeeklyCompletionManager.isOffline(s)) return false;
+          if (!WeeklyCompletionManager.isSectionCompleted(s)) return false;
+          return WeeklyCompletionManager.isSectionInCurrentWeek(s, c, allSections);
+        });
+
+        return { course: c, incompleteSections, completedSections };
+      });
+
+      const totalIncomplete = processedCourses.reduce(
+        (sum, item) => sum + item.incompleteSections.length,
+        0
+      );
+      const totalCompleted = processedCourses.reduce(
+        (sum, item) => sum + item.completedSections.length,
+        0
+      );
+
       let html = `
-        <div style="margin-bottom:14px;">
-          <a href="https://my.unpam.ac.id/presensi/" target="_blank" style="
-            display:flex; align-items:center; gap:12px;
-            padding:12px 14px;
-            background: rgba(0, 165, 80, 0.08);
-            border: 1px solid rgba(0, 165, 80, 0.2);
-            border-radius:10px;
-            text-decoration:none;
-            transition: background 0.2s, border-color 0.2s;
-          " onmouseover="this.style.background='rgba(0,165,80,0.14)'; this.style.borderColor='rgba(0,165,80,0.35)'"
-             onmouseout="this.style.background='rgba(0,165,80,0.08)'; this.style.borderColor='rgba(0,165,80,0.2)'">
-            <div style="width:36px; height:36px; flex-shrink:0; background:rgba(0,165,80,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#00a550;">
-              <span class="ms" style="font-size:20px;">fact_check</span>
+        <a href="https://my.unpam.ac.id/presensi/" target="_blank" class="presensi-shortcut-card">
+          <div class="presensi-shortcut-icon">
+            <span class="ms" style="font-size:18px;">fact_check</span>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div class="presensi-shortcut-title">Halaman Presensi Mahasiswa</div>
+            <div class="presensi-shortcut-sub">
+              <span class="ms" style="font-size:11px;">link</span> my.unpam.ac.id/presensi
             </div>
-            <div style="flex:1; min-width:0;">
-              <div style="font-size:12px; font-weight:700; color:#00a550; margin-bottom:2px;">Halaman Presensi Mahasiswa</div>
-              <div style="font-size:10px; color:#00a550; opacity:0.65; display:flex; align-items:center; gap:4px;">
-                <span class="ms" style="font-size:11px;">link</span> my.unpam.ac.id/presensi
-              </div>
-            </div>
-            <span class="ms" style="font-size:16px; color:#00a550; opacity:0.5; flex-shrink:0;">open_in_new</span>
-          </a>
+          </div>
+          <span class="ms" style="font-size:15px; color:#00a550; opacity:0.5; flex-shrink:0;">open_in_new</span>
+        </a>
+
+        <!-- Unified Forum Control Bar -->
+        <div class="forum-control-bar">
+          <div class="forum-filter-bar">
+            <button type="button" class="forum-filter-btn ${currentFilter === "todo" ? "active" : ""}" data-filter="todo">
+              <span class="ms" style="font-size:13px;">local_fire_department</span> Belum Selesai <span class="filter-count">${totalIncomplete}</span>
+            </button>
+            <button type="button" class="forum-filter-btn ${currentFilter === "completed" ? "active" : ""}" data-filter="completed">
+              <span class="ms" style="font-size:13px;">check_circle</span> Selesai <span class="filter-count">${totalCompleted}</span>
+            </button>
+            <button type="button" class="forum-filter-btn ${currentFilter === "all" ? "active" : ""}" data-filter="all">
+              <span class="ms" style="font-size:13px;">view_agenda</span> Semua
+            </button>
+          </div>
+          <button type="button" class="sapu-bersih-all-btn" title="Isi & Selesaikan Semua Kuesioner Otomatis">
+            <span class="ms" style="font-size:13px;">rocket_launch</span> Kuesioner
+          </button>
         </div>
       `;
 
@@ -1142,62 +2818,84 @@ ${questionText}`;
           </div>
         `;
       } else {
-        const sortedData = [...data].sort((a, b) => {
-          const days = [
-            "Minggu",
-            "Senin",
-            "Selasa",
-            "Rabu",
-            "Kamis",
-            "Jumat",
-            "Sabtu",
-          ];
-          const getDay = (name) => {
-            const m = name.match(/\(([^)]+)\)/);
-            return m ? days.indexOf(m[1]) : 7;
-          };
-          return getDay(a.coursename) - getDay(b.coursename);
-        });
+        const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+        const getDay = (name) => {
+          const m = name.match(/\(([^)]+)\)/);
+          return m ? days.indexOf(m[1]) : 7;
+        };
 
-        const coursesHtml = sortedData
-          .map((course) => this.renderCourse(course))
-          .join("");
+        const sortedProcessed = [...processedCourses].sort(
+          (a, b) => getDay(a.course.coursename) - getDay(b.course.coursename)
+        );
 
-        if (!coursesHtml.trim()) {
+        let todoHtml = "";
+        if (currentFilter === "todo" || currentFilter === "all") {
+          const coursesWithTodo = sortedProcessed.filter((p) => p.incompleteSections.length > 0);
+          if (coursesWithTodo.length > 0) {
+            todoHtml = coursesWithTodo
+              .map(({ course, incompleteSections }) => this.renderCourse(course, incompleteSections))
+              .join("");
+          } else if (currentFilter === "todo") {
+            todoHtml = `
+              <div class="empty-state">
+                <div class="empty-icon" style="color: #79bb7c; background: rgba(121, 187, 124, 0.05); border-color: rgba(121, 187, 124, 0.1);">
+                  <span class="ms" style="font-size:40px;">task_alt</span>
+                </div>
+                <div class="empty-title">Semua Beres!</div>
+                <div class="empty-desc">Hore! Tidak ada forum atau kuesioner yang belum selesai.</div>
+              </div>
+            `;
+          }
+        }
+
+        let completedHtml = "";
+        if (currentFilter === "completed" || currentFilter === "all") {
+          const coursesWithCompleted = sortedProcessed.filter((p) => p.completedSections.length > 0);
+          if (coursesWithCompleted.length > 0) {
+            completedHtml = this.renderCompletedContainer(coursesWithCompleted);
+          } else if (currentFilter === "completed") {
+            completedHtml = `
+              <div class="empty-state">
+                <div class="empty-icon" style="color: #4ade80; background: rgba(74, 222, 128, 0.05); border-color: rgba(74, 222, 128, 0.1);">
+                  <span class="ms" style="font-size:40px;">event_available</span>
+                </div>
+                <div class="empty-title">Belum Ada yang Selesai Minggu Ini</div>
+                <div class="empty-desc">Pertemuan yang diselesaikan pada minggu berjalan akan muncul di sini.</div>
+              </div>
+            `;
+          }
+        }
+
+        if (currentFilter === "all" && !todoHtml.trim() && !completedHtml.trim()) {
           html += `
             <div class="empty-state">
               <div class="empty-icon" style="color: #79bb7c; background: rgba(121, 187, 124, 0.05); border-color: rgba(121, 187, 124, 0.1);">
                 <span class="ms" style="font-size:40px;">task_alt</span>
               </div>
               <div class="empty-title">Semua Beres!</div>
-              <div class="empty-desc">Hore! Tidak ada forum diskusi yang perlu dikerjakan saat ini. Istirahatlah sejenak.</div>
+              <div class="empty-desc">Hore! Tidak ada tugas pertemuan yang aktif saat ini.</div>
             </div>
           `;
         } else {
-          html += coursesHtml;
+          html += todoHtml + completedHtml;
         }
       }
 
       el.innerHTML = html;
       this.initInteractions(data);
-      this.updateForumBadge();
+      this.updateForumBadge(totalIncomplete);
     },
 
-    updateForumBadge() {
+    updateForumBadge(totalIncomplete) {
       const badge = document.getElementById("forum-tab-badge");
-      const forum = document.getElementById("forum-tab-tab");
-      if (!badge || !forum) return;
+      if (!badge) return;
 
-      const incompleteMeetings = Array.from(
-        forum.querySelectorAll(".section-card"),
-      ).filter((section) => section.querySelector(".status-todo"));
-
-      const count = incompleteMeetings.length;
+      const count = typeof totalIncomplete === "number" ? totalIncomplete : 0;
       badge.textContent = count ? String(count) : "";
       badge.style.display = count ? "inline-flex" : "none";
     },
 
-    renderCourse(c) {
+    renderCourse(c, sectionsToRender) {
       const allSections = c.data || [];
       let lastCompletedSort = 0;
       let maxSort = 0;
@@ -1220,63 +2918,41 @@ ${questionText}`;
       const progressPercent =
         totalSorts > 0 ? Math.round((lastCompletedSort / totalSorts) * 100) : 0;
 
-      const sections = allSections.filter((s) => {
+      const sections = sectionsToRender || allSections.filter((s) => {
         if (!s.sub_section) return false;
+        if (WeeklyCompletionManager.isOffline(s)) return false;
         const forum = s.sub_section.find(
           (i) => i.kode_template === "FORUM_DISKUSI" && i.id,
         );
         const kuesioner = s.sub_section.find(
-          (i) => i.kode_template === "KUESIONER" || i.tipe === "QUESIONER",
+          (i) => WeeklyCompletionManager.isKuesioner(i),
         );
         if (!forum && !kuesioner) return false;
-        if (kuesioner?.completion === true) return false;
         if (forum?.warningAlert?.includes("Soal forum diskusi belum tersedia"))
           return false;
-        const postTest = s.sub_section.find(
-          (i) => i.kode_template === "POST_TEST",
-        );
-        if (
-          forum &&
-          forum.completion === true &&
-          !kuesioner &&
-          (!postTest || postTest.completion === true || !postTest.id)
-        )
-          return false;
-        return true;
+        return !WeeklyCompletionManager.isSectionCompleted(s);
       });
 
-      // Parse coursename details (e.g. "[2] STATISTIK NON PARAMETRIK # 05MATP002 (Senin) [P-1]")
       const rawName = c.coursename || "";
       const sksMatch = rawName.match(/^\[(\d+)\]/);
-      const sks = sksMatch ? sksMatch[1] : null;
-
+      const sks = sksMatch ? sksMatch[1] : (c.sks || "");
       const hariMatch = rawName.match(/\(([^)]+)\)/);
-      const hari = hariMatch ? hariMatch[1] : null;
-
+      const hari = hariMatch ? hariMatch[1] : "";
       const kelasMatch = rawName.match(/#\s*([^\s(]+)/);
-      const kelas = kelasMatch ? kelasMatch[1] : null;
-
-      let courseTitle = rawName
-        .split("#")[0]
-        .replace(/^\[\d+\]\s*/, "")
-        .replace(/\([^)]+\)/g, "")
-        .replace(/\[[^\]]+\]/g, "")
-        .trim();
-
-      if (!courseTitle) courseTitle = rawName;
+      const kelas = kelasMatch ? kelasMatch[1] : "";
+      const courseTitle =
+        rawName.replace(/^\[\d+\]\s*/, "").replace(/#.*$/, "").trim() ||
+        c.coursename;
 
       const validSectionsHtml = sections
         .map((s, idx) => this.renderSection(s, c, idx))
-        .filter((html) => html && html.trim() !== "")
         .join("");
 
-      if (!validSectionsHtml.trim()) return "";
-
       return `
-        <div class="course-card" style="margin-bottom: 14px;">
-          <div class="course-card-header" style="padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%;">
-              <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+        <div class="course-card">
+          <div class="course-card-header">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 8px;">
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
                 <p class="course-title" style="margin: 0; font-weight: 700; font-size: 0.95rem; line-height: 1.35;">${courseTitle}</p>
                 <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; flex-wrap: wrap;">
                   ${sks ? `<span class="course-chip course-chip-sks" style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 400;"><span class="ms" style="font-size:11px;">auto_stories</span> ${sks} SKS</span>` : ""}
@@ -1290,7 +2966,7 @@ ${questionText}`;
                 <span class="course-progress-label" style="font-size: 0.68rem; opacity: 0.6;">Pertemuan ${lastCompletedSort} / ${totalSorts}</span>
               </div>
             </div>
-            <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
               <div class="course-progress-track">
                 <div class="course-progress-bar" style="width: ${progressPercent}%;"></div>
               </div>
@@ -1303,6 +2979,133 @@ ${questionText}`;
       `;
     },
 
+    renderCompletedContainer(coursesWithCompleted) {
+      const { label } = WeeklyCompletionManager.getCurrentWeekWindow();
+      const totalCompleted = coursesWithCompleted.reduce(
+        (sum, { completedSections }) => sum + completedSections.length,
+        0
+      );
+
+      if (!totalCompleted) return "";
+
+      const coursesHtml = coursesWithCompleted
+        .map(({ course, completedSections }) =>
+          this.renderCompletedCourse(course, completedSections)
+        )
+        .join("");
+
+      return `
+        <div class="completed-week-container">
+          <div class="completed-week-header">
+            <div class="completed-week-title">
+              <div class="completed-week-icon">
+                <span class="ms">verified_user</span>
+              </div>
+              <div>
+                <div class="completed-week-heading">Diselesaikan &bull; Minggu Ini</div>
+                <div class="completed-week-sub">${label}</div>
+              </div>
+            </div>
+            <span class="completed-week-pill">
+              <span class="ms" style="font-size:12px;">check</span> ${totalCompleted} Selesai
+            </span>
+          </div>
+          ${coursesHtml}
+        </div>
+      `;
+    },
+
+    renderCompletedCourse(c, completedSections) {
+      const rawName = c.coursename || "";
+      const sksMatch = rawName.match(/^\[(\d+)\]/);
+      const sks = sksMatch ? sksMatch[1] : (c.sks || "");
+      const hariMatch = rawName.match(/\(([^)]+)\)/);
+      const hari = hariMatch ? hariMatch[1] : "";
+      const kelasMatch = rawName.match(/#\s*([^\s(]+)/);
+      const kelas = kelasMatch ? kelasMatch[1] : "";
+      const courseTitle =
+        rawName.replace(/^\[\d+\]\s*/, "").replace(/#.*$/, "").trim() ||
+        c.coursename;
+
+      const isDoubleMeeting = completedSections.length >= 2;
+
+      const sectionsHtml = completedSections
+        .map((s, idx) => this.renderCompletedSection(s, c, idx))
+        .join("");
+
+      return `
+        <div class="course-card completed-course-card" style="margin-bottom:12px;">
+          <div class="course-card-header">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%; gap:8px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <p class="course-title" style="margin:0; font-weight:700; font-size:0.95rem; line-height:1.35;">${courseTitle}</p>
+                <div style="display:flex; flex-direction:row; align-items:center; gap:6px; flex-wrap:wrap;">
+                  ${sks ? `<span class="course-chip course-chip-sks" style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 400;"><span class="ms" style="font-size:11px;">auto_stories</span> ${sks} SKS</span>` : ""}
+                  ${hari ? `<span class="course-chip course-chip-day" style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 400;"><span class="ms" style="font-size:11px;">calendar_month</span> ${hari}</span>` : ""}
+                  ${kelas ? `<span class="course-chip course-chip-class" style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 400;"><span class="ms" style="font-size:11px;">school</span> Kelas ${kelas}</span>` : ""}
+                  ${isDoubleMeeting ? `<span class="course-chip" style="background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); font-size:0.7rem; font-weight:600;"><span class="ms" style="font-size:11px;">event_repeat</span> 2 Pertemuan / Minggu</span>` : ""}
+                </div>
+                <span class="course-code" style="opacity: 0.5; font-size: 0.68rem; margin-top: 1px;">Kode Course: ${c.kode_course}</span>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
+                <span class="course-progress-value" style="font-size:0.85rem; font-weight:800; font-family:monospace; color:#79bb7c; display:inline-flex; align-items:center; gap:3px;">
+                  <span class="ms" style="font-size:13px;">task_alt</span> 100%
+                </span>
+                <span class="course-progress-label" style="font-size:0.68rem; opacity:0.6;">${completedSections.length} Pertemuan Selesai</span>
+              </div>
+            </div>
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+              <div class="course-progress-track">
+                <div class="course-progress-bar" style="width: 100%; background: linear-gradient(90deg, #79bb7c, #4ade80);"></div>
+              </div>
+            </div>
+          </div>
+          <div class="course-card-body" style="padding:10px; padding-bottom:0px; border-top:1px solid rgba(255,255,255,0.05); width:100%; box-sizing:border-box;">
+            ${sectionsHtml}
+          </div>
+        </div>
+      `;
+    },
+
+    renderCompletedSection(s, c, idx) {
+      const itemsHtml = (s.sub_section || [])
+        .map((item) => this.renderItem(item, s, c))
+        .filter((html) => html && html.trim() !== "")
+        .join("");
+
+      const sectionId = `sect-comp-${c.kode_course}-${idx}`;
+      const sectionUrl = `https://mentari.unpam.ac.id/u-courses/${c.kode_course}?accord_pertemuan=${s.kode_section}`;
+
+      return `
+        <div class="section-card completed-section-card">
+          <div class="section-header" data-target="${sectionId}">
+            <div class="section-header-left">
+              <div class="section-header-icon" style="color:#79bb7c; background:rgba(121,187,124,0.14);"><span class="ms">task_alt</span></div>
+              <h3>${s.nama_section}</h3>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="section-done-badge">
+                <span class="ms" style="font-size: 11px;">check</span> Selesai
+              </span>
+              <span class="section-toggle"><span class="ms">expand_more</span></span>
+            </div>
+          </div>
+          <div class="section-content" id="${sectionId}">
+            <a href="${sectionUrl}" class="item-row" style="background: rgba(121,187,124,0.06); border-color: rgba(121,187,124,0.2);" onclick="event.stopPropagation()">
+              <div class="item-icon" style="background: rgba(121,187,124,0.15); color: #79bb7c;">
+                <span class="ms">folder_open</span>
+              </div>
+              <div class="item-info">
+                <span class="item-title" style="color: #79bb7c;">Buka Pertemuan</span>
+                <div class="item-meta"><span>Buka langsung di Mentari UNPAM</span></div>
+              </div>
+              <span class="ms" style="opacity:0.6; font-size:14px; flex-shrink:0; color:#79bb7c;">chevron_right</span>
+            </a>
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
+    },
     renderSection(s, c, idx) {
       const itemsHtml = (s.sub_section || [])
         .map((item) => this.renderItem(item, s, c))
@@ -1321,6 +3124,17 @@ ${questionText}`;
               <h3>${s.nama_section}</h3>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
+              ${!WeeklyCompletionManager.isSectionCompleted(s) ? `
+                <button type="button" class="sapu-bersih-section-btn" title="Sapu Bersih Pertemuan Ini (AI Auto-Pilot)"
+                  data-course-code="${c.kode_course}" data-section-code="${s.kode_section}"
+                  onclick="event.stopPropagation();">
+                  <span class="ms">bolt</span> Sapu Bersih
+                </button>
+              ` : `
+                <span class="section-done-badge">
+                  <span class="ms" style="font-size: 11px;">check</span> Selesai
+                </span>
+              `}
               <span class="section-toggle"><span class="ms">expand_more</span></span>
             </div>
           </div>
@@ -1351,8 +3165,7 @@ ${questionText}`;
         "ARTIKEL_RISET",
         "MATERI_LAINNYA",
       ].includes(i.kode_template);
-      const isKuesioner =
-        i.kode_template === "KUESIONER" || i.tipe === "QUESIONER";
+      const isKuesioner = WeeklyCompletionManager.isKuesioner(i);
       const isTugas = i.kode_template === "PENUGASAN_TERSTRUKTUR";
 
       if (isMaterial && !i.link && !i.file) return "";
@@ -1431,7 +3244,7 @@ ${questionText}`;
       return `
            <div class="item-row ${i.completion ? "completed-item" : ""}" 
              onclick="if(event.target.closest('a,button,input,select,textarea,form')) return; window.location.href='${cardUrl}';"
-             style="flex-direction:column; align-items:stretch; padding:0; overflow:hidden; ${i.completion ? "opacity:0.8;" : "background: rgba(130, 130, 130, 0.13);"}" data-name="${i.judul}">
+             style="flex-direction:column; align-items:stretch; padding:0; overflow:hidden; ${i.completion ? "opacity:0.75;" : ""}" data-name="${i.judul}">
           <div style="display:flex; align-items:center; gap:10px; padding:10px;">
             <div class="item-icon ${iconClass}"><span class="ms">${icon}</span></div>
             <div class="item-info">
@@ -1446,14 +3259,14 @@ ${questionText}`;
               ${
                 forumKonten
                   ? `
-                <button class="token-button" title="Lihat Konten Forum" onclick="event.stopPropagation(); const el=document.getElementById('${forumKontenId}'); el.style.display=el.style.display==='none'?'block':'none';" style="height:26px; padding:0 8px; background: #3d99e3; color: #000; border-radius:6px; font-size:11px; display:inline-flex; align-items:center; gap:4px;">
+                <button type="button" class="token-button forum-content-preview-btn" title="Lihat Konten Forum" onclick="event.stopPropagation(); const el=document.getElementById('${forumKontenId}'); el.style.display=el.style.display==='none'?'block':'none';" style="height:26px; padding:0 8px; background: rgba(61,153,227,0.12); color: #38bdf8; border: 1px solid rgba(61,153,227,0.25); border-radius:6px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
                   <span class="ms" style="font-size:14px;">menu_book</span> Konten
                 </button>`
                   : ""
               }
               ${
                 isForum && i.id
-                  ? `<button type="button" class="token-button forum-reply-btn" title="Balas Forum" data-forum-id="${i.id}" onclick="event.stopPropagation();" style="height:26px; padding:0 10px; background:#79bb7c; color: black; border-radius:6px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;"><span class="ms" style="font-size:13px;">reply</span> Balas</button>`
+                  ? `<button type="button" class="token-button forum-reply-btn" title="Balas Forum" data-forum-id="${i.id}" onclick="event.stopPropagation();" style="height:26px; padding:0 10px; background: rgba(121,187,124,0.14); color: #79bb7c; border: 1px solid rgba(121,187,124,0.3); border-radius:6px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><span class="ms" style="font-size:13px;">reply</span> Balas</button>`
                   : ""
               }
               ${
@@ -1468,7 +3281,7 @@ ${questionText}`;
           ${
             forumKonten
               ? `
-            <div id="${forumKontenId}" class="forum-html-preview" style="display:none; padding:10px; border-top:1px solid rgba(255,255,255,0.05); color:rgba(255,255,255,0.7); background:rgba(0,0,0,0.6);">
+            <div id="${forumKontenId}" class="forum-html-preview forum-html-preview-box">
               ${forumKonten}
             </div>`
               : ""
@@ -1476,8 +3289,8 @@ ${questionText}`;
           ${
             isForum && i.id
               ? `
-            <div style="display:flex; justify-content:flex-end; padding:4px 10px 0 10px;">
-              <span class="forum-reply-count" data-forum-id="${i.id}" style="font-size:11px; opacity:0.8; font-weight:600; color:#f0872d; display:inline-flex; align-items:center; gap:3px;"><span class="ms" style="font-size:12px;">reply</span> Reply Kamu: -</span>
+            <div style="display:flex; justify-content:flex-end; padding:2px 10px 0 10px;">
+              <span class="forum-reply-count" data-forum-id="${i.id}" style="font-size:10.5px; opacity:0.85; font-weight:600; color:#f0872d; display:inline-flex; align-items:center; gap:3px;"><span class="ms" style="font-size:12px;">reply</span> Reply Kamu: -</span>
             </div>
             <div class="topics-container" data-forum-id="${i.id}" data-course-code="${c.kode_course}" style="padding:0 8px 8px;"></div>`
               : ""
@@ -1498,48 +3311,57 @@ ${questionText}`;
     },
 
     initInteractions(data) {
-      document.querySelectorAll(".section-header").forEach((header) => {
-        header.onclick = (e) => {
+      // Filter buttons
+      document.querySelectorAll(".forum-filter-btn").forEach((btn) => {
+        btn.onclick = (e) => {
           e.stopPropagation();
-          const target = document.getElementById(header.dataset.target);
-          const toggle = header.querySelector(".section-toggle");
-          if (target) {
-            const isVisible = target.classList.contains("active");
-            if (isVisible) {
-              target.classList.remove("active");
-              toggle.classList.remove("active");
-            } else {
-              document
-                .querySelectorAll(".section-content.active")
-                .forEach((openSection) => {
-                  openSection.classList.remove("active");
-                  openSection
-                    .closest(".section-card")
-                    ?.querySelector(".section-toggle")
-                    ?.classList.remove("active");
-                });
-              target.classList.add("active");
-              toggle.classList.add("active");
-            }
+          const filter = btn.dataset.filter;
+          State.forumFilterMode = filter;
+          Utils.save("mentari_forum_filter_mode", filter);
+          this.render(data);
+        };
+      });
+
+      // Sapu Bersih Semua Kuesioner
+      const sapuAllBtn = document.querySelector(".sapu-bersih-all-btn");
+      if (sapuAllBtn) {
+        sapuAllBtn.onclick = (e) => {
+          e.stopPropagation();
+          TaskQueueEngine.runAllKuesionerAutoPilot(data);
+        };
+      }
+
+      // Sapu Bersih Section Buttons
+      document.querySelectorAll(".sapu-bersih-section-btn").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const courseCode = btn.dataset.courseCode;
+          const sectionCode = btn.dataset.sectionCode;
+          const course = data.find((c) => c.kode_course === courseCode);
+          const section = (course?.data || []).find((s) => s.kode_section === sectionCode);
+          if (course && section) {
+            TaskQueueEngine.runSectionAutoPilot(section, course);
           }
         };
       });
 
-      document.querySelectorAll(".forum-reply-btn").forEach((button) => {
-        button.onclick = (e) => {
-          e.stopPropagation();
-          const container = document.querySelector(
-            `.topics-container[data-forum-id="${button.dataset.forumId}"]`,
-          );
-          if (container) this.toggleForumReplyForm(container);
+      // Accordion toggles
+      document.querySelectorAll(".section-header").forEach((header) => {
+        header.onclick = (e) => {
+          if (e.target.closest("button, a, input, select, textarea")) return;
+          const target = document.getElementById(header.dataset.target);
+          const toggle = header.querySelector(".section-toggle");
+          if (target) {
+            target.classList.toggle("active");
+            if (toggle) toggle.classList.toggle("active");
+          }
         };
       });
 
+      // Kuesioner Submit Button
       document.querySelectorAll(".kuesioner-submit-btn").forEach((button) => {
-        button.onclick = async (e) => {
-          e.stopPropagation();
-          if (button.disabled) return;
-
+        button.onclick = async (event) => {
+          event.stopPropagation();
           const courseCode = button.dataset.courseCode;
           const sectionCode = button.dataset.sectionCode;
           const originalContent = button.innerHTML;
@@ -1547,43 +3369,38 @@ ${questionText}`;
           button.innerHTML = `<span class="ms mentari-spin" style="font-size:16px;">sync</span>`;
 
           try {
-            Utils.progressToast("Sedang mengambil pertanyaan kuisioner...");
-            const detail = await ApiService.fetchKuesioner(
-              courseCode,
-              sectionCode,
-            );
-            const questions = detail?.kuesioner || [];
-            if (!questions.length)
-              throw new Error("Pertanyaan kuisioner kosong");
-
-            Utils.progressToast("Sedang mengirim jawaban kuisioner...");
-            await ApiService.submitKuesioner(
-              courseCode,
-              sectionCode,
-              questions,
-            );
+            Utils.progressToast("Sedang mengisi kuesioner...");
+            await TaskQueueEngine.executeKuesionerAuto(courseCode, sectionCode);
             Utils.closeProgressToast();
-            Utils.successToast("Kuisioner berhasil dikirim");
+            Utils.successToast("Kuesioner berhasil diisi & diselesaikan");
             setTimeout(() => App.refreshData(true), 700);
           } catch (error) {
-            console.error("[Mentari] Gagal submit kuisioner", {
-              kode_course: courseCode,
-              kode_section: sectionCode,
-              error,
-            });
             Utils.closeProgressToast();
-            Utils.toast("Kuisioner gagal dikirim");
+            Utils.toast(`Kuesioner gagal: ${error.message}`);
+          } finally {
             button.disabled = false;
             button.innerHTML = originalContent;
           }
         };
       });
 
-      document.querySelectorAll(".quiz-ai-submit-btn").forEach((button) => {
-        button.onclick = async (e) => {
-          e.stopPropagation();
-          if (button.disabled) return;
+      // Forum reply toggle buttons
+      document.querySelectorAll(".forum-reply-btn").forEach((button) => {
+        button.onclick = (event) => {
+          event.stopPropagation();
+          const id = button.dataset.forumId;
+          const container = document.querySelector(
+            `.topics-container[data-forum-id="${id}"]`,
+          );
+          if (!container) return;
+          this.toggleForumReplyForm(container);
+        };
+      });
 
+      // Quiz AI Submit Buttons
+      document.querySelectorAll(".quiz-ai-submit-btn").forEach((button) => {
+        button.onclick = async (event) => {
+          event.stopPropagation();
           const quizId = button.dataset.quizId;
           const quizTitle = button.dataset.quizTitle;
           const originalContent = button.innerHTML;
@@ -1591,70 +3408,11 @@ ${questionText}`;
           button.innerHTML = `<span class="ms mentari-spin" style="font-size:16px;">sync</span>`;
 
           try {
-            Utils.progressToast("Sedang memulai quiz...");
-            await ApiService.startQuiz(quizId);
-            Utils.progressToast("Sedang mencari soal quiz...");
-            const questions =
-              (await ApiService.fetchQuizQuestions(quizId))?.data || [];
-            if (!questions.length) throw new Error("Soal quiz kosong");
-
-            Utils.progressToast("AI sedang menjawab quiz...");
-            const answers = await ApiService.askGeminiQuiz(
-              ApiService.getGeminiApiKey(),
-              questions,
+            await TaskQueueEngine.executeQuizWithAI(
+              quizId,
+              quizTitle,
+              (msg) => Utils.progressToast(msg)
             );
-            const answersByQuestion = new Map(
-              answers.map((answer) => [answer.question_id, answer]),
-            );
-
-            for (const question of questions) {
-              const aiAnswer = answersByQuestion.get(question.id);
-              const isEssay = question.jenis_soal?.toUpperCase() === "ESSAY";
-              let payload;
-
-              if (isEssay) {
-                const answerText = String(aiAnswer?.answer_text || "").trim();
-                if (!answerText)
-                  throw new Error(
-                    `Jawaban essay AI kosong untuk ${question.id}`,
-                  );
-                payload = {
-                  id_trx_quiz_user_soal: question.id,
-                  id_jawaban: null,
-                  jawaban: answerText,
-                };
-              } else {
-                const answerIndex = aiAnswer?.answer_index;
-                const selectedAnswer =
-                  question.list_jawaban?.[Number(answerIndex) - 1];
-                if (!selectedAnswer?.id)
-                  throw new Error(
-                    `Jawaban AI tidak valid untuk ${question.id}`,
-                  );
-                payload = {
-                  id_trx_quiz_user_soal: question.id,
-                  id_jawaban: selectedAnswer.id,
-                  jawaban: null,
-                };
-              }
-
-              Utils.progressToast("Sedang mengirim jawaban quiz...");
-              await ApiService.submitQuizAnswer(payload);
-            }
-
-            const quizDelaySetting =
-              Utils.get(Config.STORAGE_KEYS.QUIZ_DELAY) || "0";
-            const delayMs = Utils.parseMinutesToMs(quizDelaySetting);
-            if (delayMs > 0) {
-              await Utils.countdownDelay(delayMs, (formattedTime) => {
-                Utils.progressToast(
-                  `Menunggu ${formattedTime} sebelum menyelesaikan quiz...`,
-                );
-              });
-            }
-
-            Utils.progressToast("Sedang menyelesaikan quiz...");
-            await ApiService.endQuiz(quizId);
             Utils.closeProgressToast();
             Utils.successToast("Jawaban quiz berhasil diisi AI & diselesaikan");
             setTimeout(() => App.refreshData(true), 700);
@@ -1677,7 +3435,6 @@ ${questionText}`;
       this.loadQuizParticipants();
       this.loadTopics();
     },
-
     loadQuizParticipants() {
       document
         .querySelectorAll(".quiz-participant-status[data-quiz-id]")
@@ -1804,6 +3561,7 @@ ${questionText}`;
             return {
               topic,
               root,
+              studentReplies,
               studentReplyCount: studentReplies.length,
               ownReplies: [...ownLevelOne, ...ownLevelTwo],
             };
@@ -1815,17 +3573,31 @@ ${questionText}`;
 
       const visibleGroups = replyGroups.filter(Boolean);
       container._forumReplyTargets = visibleGroups.map(
-        ({ topic, root, ownReplies }) => ({
-          id: topic.id,
-          topicId: topic.id,
-          judul: `RE ${root?.judul || topic.judul || "Forum Diskusi"}`,
-          label: `Topik: ${root?.judul || topic.judul || "Forum Diskusi"}`,
-          own: false,
-          replies: ownReplies.map((reply) => ({
-            ...reply,
+        ({ topic, root, ownReplies, studentReplies }) => {
+          const peerReplies = (studentReplies || [])
+            .slice(0, 5)
+            .map((r) => this.cleanForumText(r.konten || ""))
+            .filter(Boolean);
+          const cleanTopicText = this.cleanForumText(root?.konten || topic.konten || "");
+
+          return {
+            id: topic.id,
             topicId: topic.id,
-          })),
-        }),
+            judul: `RE ${root?.judul || topic.judul || "Forum Diskusi"}`,
+            label: `Topik: ${root?.judul || topic.judul || "Forum Diskusi"}`,
+            own: false,
+            konten: cleanTopicText,
+            isDosen: true,
+            peerReplies: peerReplies,
+            replies: ownReplies.map((reply) => ({
+              ...reply,
+              topicId: topic.id,
+              konten: this.cleanForumText(reply.konten || ""),
+              isDosen: false,
+              peerReplies: peerReplies,
+            })),
+          };
+        },
       );
       const totalReplies = visibleGroups.reduce(
         (total, group) => total + group.ownReplies.length,
@@ -1841,8 +3613,7 @@ ${questionText}`;
       visibleGroups.forEach(
         ({ topic, root, ownReplies, studentReplyCount }) => {
           const topicEl = document.createElement("div");
-          topicEl.style.cssText =
-            "margin-top:8px; padding:10px 12px; border:1px solid rgba(61,153,227,0.15); border-radius:8px; font-size:11px; line-height:1.5;";
+          topicEl.className = "forum-topic-card";
 
           const title = document.createElement("a");
           title.href = `https://mentari.unpam.ac.id/u-courses/${courseCode}/forum/${sectionId}/topics/${topic.id}`;
@@ -1864,8 +3635,7 @@ ${questionText}`;
 
           ownReplies.forEach((reply) => {
             const replyEl = document.createElement("div");
-            replyEl.style.cssText =
-              "margin-top:6px; padding:8px 10px; border-radius:6px; background:rgba(240,135,45,0.08); border-left:3px solid #f0872d; font-size:11px;";
+            replyEl.className = "forum-user-reply-card";
             replyEl.innerHTML = `${Number(reply.reply_level) === 2 ? "<span style='opacity:0.6; margin-right:4px;'>↳ Balasan:</span>" : ""}${this.sanitizeForumHtml(reply.konten || "")}`;
             this.appendForumFiles(replyEl, reply.files);
             topicEl.appendChild(replyEl);
@@ -1909,35 +3679,74 @@ ${questionText}`;
       const targets = container._forumReplyTargets || [];
       const form = document.createElement("div");
       form.className = "forum-reply-form";
-      form.style.cssText =
-        "margin-top:8px; margin-bottom:8px; padding:10px 12px; border:1px solid rgba(61,153,227,0.2); border-radius:8px; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; gap:8px;";
       form.onclick = (event) => event.stopPropagation();
       form.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:space-between;">
-          <div style="font-size:11px; font-weight:700; color:#3d99e3; display:flex; align-items:center; gap:5px;">
-            <span class="ms" style="font-size:14px;">edit_note</span> Tulis Balasan Forum
+        <div class="forum-reply-header">
+          <div class="forum-reply-header-title">
+            <span class="ms" style="font-size:15px; color:#3d99e3;">edit_note</span> Tulis Balasan Forum
           </div>
-          <button type="button" class="token-button forum-reply-cancel" style="background:transparent; padding:2px; color:rgba(255,255,255,0.5);" title="Tutup">
+          <button type="button" class="forum-reply-close-btn forum-reply-cancel" title="Tutup Form">
             <span class="ms" style="font-size:14px;">close</span>
           </button>
         </div>
-        <div style="display:flex; flex-direction:column; gap:4px; max-width:100%; position:relative;">
-          <label style="font-size:10px; opacity:0.7; font-weight:600;">Sasaran Balasan:</label>
+
+        <!-- Sasaran Balasan Dropdown -->
+        <div class="custom-reply-select-wrapper">
+          <label class="forum-reply-label">Sasaran Balasan:</label>
           <input type="hidden" class="forum-reply-parent-val" value="" />
-          <button type="button" class="custom-reply-select-btn" style="width:100%; max-width:100%; box-sizing:border-box; padding:7px 10px; border:1px solid rgba(255,255,255,0.15); border-radius:6px; background:rgba(0,0,0,0.4); color:#f1f5f9; font-size:11px; text-align:left; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:6px; line-height:1.4;">
-            <span class="custom-reply-select-label" style="flex:1; min-width:0; white-space:normal; word-break:break-word; overflow-wrap:anywhere;">Pilih sasaran balasan...</span>
+          <button type="button" class="custom-reply-select-btn">
+            <span class="custom-reply-select-label">Pilih sasaran balasan...</span>
             <span class="ms" style="font-size:14px; opacity:0.6; flex-shrink:0;">expand_more</span>
           </button>
-          <div class="custom-reply-options-list" style="display:none; position:absolute; top:100%; left:0; right:0; margin-top:4px; max-height:180px; overflow-y:auto; background:#1e293b; border:1px solid rgba(61,153,227,0.3); border-radius:6px; z-index:100; box-shadow:0 6px 20px rgba(0,0,0,0.5); box-sizing:border-box;">
+          <div class="custom-reply-options-list" style="display:none;"></div>
+        </div>
+
+        <!-- AI Assistant Bar -->
+        <div class="forum-ai-bar">
+          <div class="forum-ai-style-wrap">
+            <span class="ms" style="font-size:14px; color:#3d99e3; flex-shrink:0;">psychology</span>
+            <select class="forum-ai-style">
+              <option value="natural" selected>Natural Mahasiswa</option>
+              <option value="formal">Formal Akademis</option>
+              <option value="analytical">Analitis + Contoh</option>
+              <option value="concise">Ringkas & Padat</option>
+            </select>
+          </div>
+          <div class="forum-ai-actions">
+            <button type="button" class="forum-ai-answer-btn" title="Buat Jawaban Otomatis Menggunakan AI">
+              <span class="ms" style="font-size:13px;">auto_awesome</span> Jawaban AI
+            </button>
+            <button type="button" class="forum-ai-question-btn" title="Buat 3 Rekomendasi Pertanyaan Diskusi">
+              <span class="ms" style="font-size:13px;">help_outline</span> Buat Tanya
+            </button>
           </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:4px;">
-          <label style="font-size:10px; opacity:0.7; font-weight:600;">Isi Pesan Balasan:</label>
-          <textarea class="forum-reply-input" rows="3" placeholder="Tuliskan argumen / jawaban forum kamu secara lengkap..." style="width:100%; box-sizing:border-box; resize:vertical; padding:8px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(0,0,0,0.4); color:#f1f5f9; font-family:inherit; font-size:11px; min-height:65px; outline:none;"></textarea>
+
+        <!-- AI Suggestions Container -->
+        <div class="forum-ai-suggestions" style="display:none;"></div>
+
+        <!-- Textarea -->
+        <div>
+          <label class="forum-reply-label">Isi Balasan:</label>
+          <textarea class="forum-reply-input" rows="3" placeholder="Tuliskan argumen / jawaban forum kamu..."></textarea>
         </div>
-        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:2px;">
-          <button type="button" class="token-button forum-reply-cancel-btn" style="padding:4px 10px; background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); border-radius:6px; font-size:11px; font-weight:600;">Batal</button>
-          <button type="button" class="token-button forum-reply-send" style="padding:4px 14px; background:#3d99e3; color:#fff; border-radius:6px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+
+        <!-- Quick Rewrite Bar -->
+        <div class="forum-rewrite-bar">
+          <span class="forum-rewrite-label">
+            <span class="ms" style="font-size:12px;">tune</span> Revisi:
+          </span>
+          <button type="button" class="forum-rewrite-btn" data-mode="shorten" title="Ringkas jawaban">Ringkas</button>
+          <button type="button" class="forum-rewrite-btn" data-mode="paragraph" title="Satukan menjadi 1 paragraf rapi">1 Paragraf</button>
+          <button type="button" class="forum-rewrite-btn" data-mode="clarify" title="Perjelas & rapikan struktur">Perjelas</button>
+          <button type="button" class="forum-rewrite-btn" data-mode="lengthen" title="Perpanjang penjelasan">Perpanjang</button>
+          <button type="button" class="forum-rewrite-btn" data-mode="numbered" title="Format poin bernomor">Nomor</button>
+        </div>
+
+        <!-- Action Footer -->
+        <div class="forum-reply-footer">
+          <button type="button" class="forum-reply-btn-cancel forum-reply-cancel-btn">Batal</button>
+          <button type="button" class="forum-reply-btn-send forum-reply-send">
             <span class="ms" style="font-size:13px;">send</span> Kirim Balasan
           </button>
         </div>
@@ -1964,12 +3773,8 @@ ${questionText}`;
 
       targets.forEach((target) => {
         const item = document.createElement("div");
-        item.style.cssText =
-          "padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.06); font-size:11px; line-height:1.4; white-space:normal; word-break:break-word; overflow-wrap:anywhere; cursor:pointer; color:#f1f5f9; transition:background 0.15s; box-sizing:border-box;";
+        item.className = "custom-reply-option-item";
         item.textContent = target.label;
-        item.onmouseenter = () =>
-          (item.style.background = "rgba(61,153,227,0.25)");
-        item.onmouseleave = () => (item.style.background = "transparent");
         item.onclick = (e) => {
           e.stopPropagation();
           selectOption(target.id, target.label);
@@ -1985,25 +3790,160 @@ ${questionText}`;
           .filter((reply) => Number(reply.reply_level) === 1)
           .forEach((reply) => {
             const replyItem = document.createElement("div");
-            replyItem.style.cssText =
-              "padding:8px 10px 8px 20px; border-bottom:1px solid rgba(255,255,255,0.06); font-size:11px; line-height:1.4; white-space:normal; word-break:break-word; overflow-wrap:anywhere; cursor:pointer; color:#94a3b8; transition:background 0.15s; box-sizing:border-box;";
+            replyItem.className = "custom-reply-option-sub";
             const cleanedText = this.cleanForumText(reply.konten);
             const fullText = `↳ Reply kamu: ${cleanedText}`;
             replyItem.textContent = fullText;
-            replyItem.onmouseenter = () => {
-              replyItem.style.background = "rgba(61,153,227,0.25)";
-              replyItem.style.color = "#f1f5f9";
-            };
-            replyItem.onmouseleave = () => {
-              replyItem.style.background = "transparent";
-              replyItem.style.color = "#94a3b8";
-            };
             replyItem.onclick = (e) => {
               e.stopPropagation();
               selectOption(reply.id, fullText);
             };
             optionsList.appendChild(replyItem);
           });
+      });
+
+      const answerBtn = form.querySelector(".forum-ai-answer-btn");
+      const questionBtn = form.querySelector(".forum-ai-question-btn");
+      const styleSelect = form.querySelector(".forum-ai-style");
+      const suggestionsBox = form.querySelector(".forum-ai-suggestions");
+      const textarea = form.querySelector(".forum-reply-input");
+
+      const getActiveTarget = () => {
+        const parentId = hiddenInput.value;
+        const flat = targets.flatMap((t) => [
+          {
+            id: t.id,
+            topicId: t.topicId,
+            judul: t.judul,
+            konten: t.konten,
+            peerReplies: t.peerReplies || [],
+          },
+          ...(t.replies || []).map((r) => ({
+            id: r.id,
+            topicId: r.topicId,
+            judul: t.judul,
+            konten: r.konten,
+            peerReplies: t.peerReplies || [],
+          })),
+        ]);
+        return flat.find((t) => t.id === parentId) || flat[0];
+      };
+
+      answerBtn.onclick = async (e) => {
+        e.stopPropagation();
+        const activeTarget = getActiveTarget();
+        let contextText = activeTarget?.konten || "";
+        if (!contextText) {
+          const previewEl = container.closest(".item-row")?.querySelector(".forum-html-preview");
+          if (previewEl) contextText = ForumRenderer.cleanForumText(previewEl.textContent || "");
+        }
+
+        if (!contextText) {
+          Utils.toast("Konteks diskusi tidak ditemukan untuk dijawab");
+          return;
+        }
+
+        const origHtml = answerBtn.innerHTML;
+        answerBtn.disabled = true;
+        answerBtn.innerHTML = `<span class="ms mentari-spin" style="font-size:13px;">sync</span> Menulis...`;
+
+        try {
+          const style = styleSelect.value;
+          const prompt = Config.PROMPTS_FORUM.ANSWER(
+            contextText,
+            style,
+            activeTarget?.peerReplies || []
+          );
+          const answer = await ApiService.askGeminiForum(prompt);
+          textarea.value = answer;
+          Utils.successToast("Jawaban forum berhasil dibuat oleh AI");
+        } catch (err) {
+          Utils.toast(err.message);
+        } finally {
+          answerBtn.disabled = false;
+          answerBtn.innerHTML = origHtml;
+        }
+      };
+
+      questionBtn.onclick = async (e) => {
+        e.stopPropagation();
+        const activeTarget = getActiveTarget();
+        let contextText = activeTarget?.konten || "";
+        if (!contextText) {
+          const previewEl = container.closest(".item-row")?.querySelector(".forum-html-preview");
+          if (previewEl) contextText = ForumRenderer.cleanForumText(previewEl.textContent || "");
+        }
+
+        if (!contextText) {
+          Utils.toast("Konteks diskusi tidak ditemukan");
+          return;
+        }
+
+        const origHtml = questionBtn.innerHTML;
+        questionBtn.disabled = true;
+        questionBtn.innerHTML = `<span class="ms mentari-spin" style="font-size:13px;">sync</span> Mencari...`;
+
+        try {
+          const prompt = Config.PROMPTS_FORUM.QUESTIONS(contextText);
+          const res = await ApiService.askGeminiForum(prompt, true);
+          const questions = res
+            .split(/\n+/)
+            .map((q) => q.replace(/^[-*•\d.)\s]+/, "").trim())
+            .filter((q) => q.length > 5)
+            .slice(0, 3);
+
+          suggestionsBox.innerHTML = "";
+          if (questions.length) {
+            suggestionsBox.style.display = "flex";
+            questions.forEach((q) => {
+              const item = document.createElement("div");
+              item.className = "forum-ai-suggestion-item";
+              item.innerHTML = `
+                <span style="flex:1; min-width:0; line-height:1.4;">${q}</span>
+                <button type="button" class="token-button forum-ai-use-btn" style="height:22px; padding:0 8px; background:rgba(121,187,124,0.18); color:#79bb7c; border:1px solid rgba(121,187,124,0.3); border-radius:4px; font-size:10px; font-weight:700; flex-shrink:0; cursor:pointer;">Pakai</button>
+              `;
+              item.querySelector("button").onclick = (ev) => {
+                ev.stopPropagation();
+                textarea.value = q;
+                suggestionsBox.style.display = "none";
+              };
+              suggestionsBox.appendChild(item);
+            });
+          } else {
+            suggestionsBox.style.display = "none";
+            Utils.toast("Tidak ada pertanyaan yang dihasilkan");
+          }
+        } catch (err) {
+          Utils.toast(err.message);
+        } finally {
+          questionBtn.disabled = false;
+          questionBtn.innerHTML = origHtml;
+        }
+      };
+
+      form.querySelectorAll(".forum-rewrite-btn").forEach((btn) => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const currentText = textarea.value.trim();
+          if (!currentText) {
+            Utils.toast("Isi pesan balasan terlebih dahulu untuk direvisi");
+            return;
+          }
+          const mode = btn.dataset.mode;
+          const origText = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = "...";
+          try {
+            const prompt = Config.PROMPTS_FORUM.REVISE(mode, currentText);
+            const revised = await ApiService.askGeminiForum(prompt);
+            textarea.value = revised;
+          } catch (err) {
+            Utils.toast(err.message);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = origText;
+          }
+        };
       });
 
       const closeForm = () => form.remove();
@@ -2308,8 +4248,6 @@ ${questionText}`;
         "lyria",
         "robotics",
         "computer-use",
-        "gemini-2",
-        "gemini-flash",
       ];
 
       // Fetch from API
@@ -2382,6 +4320,8 @@ ${questionText}`;
 
   const App = {
     async init() {
+      State.forumFilterMode =
+        Utils.get(Config.STORAGE_KEYS.FORUM_FILTER_MODE) || "all";
       Utils.injectMaterialIcons();
       UIRenderer.injectStyles();
       UIRenderer.createPopup();
@@ -2527,6 +4467,7 @@ ${questionText}`;
 
       return {
         scrollTop: forum.scrollTop,
+        filterMode: State.forumFilterMode,
         anchor: anchor
           ? {
               id: anchor.header.dataset.target,
@@ -2545,6 +4486,14 @@ ${questionText}`;
       if (!uiState) return;
       const forum = document.getElementById("forum-tab-tab");
       if (!forum) return;
+
+      if (uiState.filterMode) {
+        State.forumFilterMode = uiState.filterMode;
+        document.querySelectorAll(".forum-filter-btn").forEach((btn) => {
+          if (btn.dataset.filter === uiState.filterMode) btn.classList.add("active");
+          else btn.classList.remove("active");
+        });
+      }
 
       uiState.openSections.forEach(({ id, scrollTop }) => {
         const section = document.getElementById(id);

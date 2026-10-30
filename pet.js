@@ -586,3 +586,57 @@ orange.setState("idle");
 white.setState("idle");
 chicken.setState("idle");
 requestAnimationFrame(loop);
+
+// Rocket Autopilot Interaction
+(function initRocket() {
+  const rocket = document.getElementById("rocketContainer");
+  const reactionEl = document.getElementById("reactionRocket");
+  if (!rocket || !reactionEl) return;
+
+  let reactionTimer = null;
+  let followFrame = null;
+
+  function showRocketReaction(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (reactionTimer) clearTimeout(reactionTimer);
+    if (followFrame) cancelAnimationFrame(followFrame);
+
+    reactionEl.textContent = "Autopilot Siap!";
+
+    const updatePos = () => {
+      const rect = rocket.getBoundingClientRect();
+      reactionEl.style.left = (rect.left + rect.width / 2) + "px";
+      reactionEl.style.top = Math.max(12, rect.top - 18) + "px";
+    };
+
+    updatePos();
+    reactionEl.classList.add("show");
+
+    rocket.classList.remove("clicked");
+    void rocket.offsetWidth;
+    rocket.classList.add("clicked");
+
+    const duration = 2000;
+    const start = performance.now();
+    function follow() {
+      if (performance.now() - start > duration) {
+        reactionEl.classList.remove("show");
+        return;
+      }
+      updatePos();
+      followFrame = requestAnimationFrame(follow);
+    }
+    followFrame = requestAnimationFrame(follow);
+
+    reactionTimer = setTimeout(() => {
+      reactionEl.classList.remove("show");
+    }, duration);
+  }
+
+  rocket.addEventListener("click", showRocketReaction);
+  rocket.addEventListener("pointerdown", showRocketReaction);
+})();

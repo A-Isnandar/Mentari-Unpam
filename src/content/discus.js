@@ -13,18 +13,42 @@
       API_KEY: "geminiApiKey",
     },
     PROMPTS: {
-      DEFAULT: (content) => `Bacalah diskusi berikut, lalu tuliskan jawaban atau rangkuman yang natural, JANGAN GUNAKAN HURUF TEBAL JANGAN GUNAKAN HURUF TEBAL JANGAN BOLD JANGAN PAKE TANDA BINTANG PLAIN TEXT YG BERSIH. dan mudah dipahami seperti jawaban manusia. jangan gunakan tanda seperti (*/#) atau yg lainnya, hanya plain text yg bersih jangan gunakan bold huruf tebal, italic, underline. dan langsung jawab tanpa mengucapkan (berikut jawabannya) atau sejenisnya. Gunakan bahasa yang natural seperti manusia. Berikan penjelasan yang lengkap dan memadai sesuai konteks diskusi, jangan dibatasi jika membutuhkan penjelasan panjang. Jangan ucapkan "Tentu, ini rangkumannya:" atau semacamnya, langsung jawab saja. Jika terdapat soal atau pertanyaan yang berhubungan dengan bahasa pemrograman atau coding, berikan contoh singkat code nya. jika pertanyaannya bernomor maka buat jawaban bernomor juga, hanya pertanyaan saja\n${content}\n\nJawaban yang natural dan mengalir:`,
+      DEFAULT: (content) => `Kamu adalah seorang mahasiswa Universitas Pamulang (UNPAM) yang aktif berdiskusi di forum e-learning.
+Jawab diskusi berikut secara lugas, akademis, dan natural.
+
+ATURAN WAJIB & SANGAT KETAT:
+1. WAJIB selalu awali kalimat pertama persis dengan frasa "Izin menjawab," (contoh: "Izin menjawab, terkait topik diskusi ini...", "Izin menjawab, menurut pemahaman saya...").
+2. DILARANG KERAS menyebut subjek/objek seperti nama mahasiswa, NIM (Nomor Induk Mahasiswa / deretan angka), nama dosen, atau sapaan ("Halo rekan", "Bapak/Ibu dosen", "Menanggapi rekan..."). Langsung bahas substansi materi diskusi.
+3. DILARANG KERAS menggunakan format Markdown seperti huruf tebal (**teks**), huruf miring (*teks*), heading (###), atau bullet bintang (*). Jawaban WAJIB berupa teks bersih mengalir (Plain Text murni).
+4. JANGAN gunakan salam pembuka ("Halo", "Selamat pagi", "Assalamu'alaikum"), sapaan personal, penutup ("Semoga membantu", "Terima kasih"), atau basa-basi AI ("Berikut jawabannya", "Tentu, ini rangkumannya:"). Awali LANGSUNG dengan "Izin menjawab, ...".
+5. Jika terdapat soal yang berhubungan dengan bahasa pemrograman atau coding, berikan potongan contoh kode singkat dan bersih. Jika pertanyaan bernomor atau meminta poin, gunakan penomoran angka biasa (1., 2., 3.).
+
+TOPIK DISKUSI:
+${content}
+
+JAWABAN PLAIN TEXT:`,
       REVISE: (mode, prevAnswer) => {
         const modes = {
-          shorten: `Ringkas jawaban berikut menjadi lebih singkat, tetap natural dan mudah dipahami, tanpa bullet atau penomoran:\n\n${prevAnswer}`,
-          paragraph: `Ubah jawaban berikut menjadi satu paragraf, tetap natural dan mudah dipahami, tanpa bullet atau penomoran:\n\n${prevAnswer}`,
-          clarify: `Perjelas dan buat jawaban berikut lebih mudah dipahami, tetap natural dan tidak seperti AI, tanpa bullet atau penomoran:\n\n${prevAnswer}`,
-          lengthen: `Perpanjang dan tambahkan detail pada jawaban berikut, tetap natural dan mudah dipahami, tanpa bullet atau penomoran:\n\n${prevAnswer}`,
-          numbered: `Ubah jawaban berikut menjadi nomor, tetap natural dan mudah dipahami, tanpa bullet atau paragraf:\n\n${prevAnswer}`
+          shorten: `Ringkas jawaban forum berikut menjadi lebih singkat dan padat, tetap diawali "Izin menjawab," tanpa bullet bintang atau markdown, dan tanpa menyebut nama/NIM/dosen:\n\n${prevAnswer}`,
+          paragraph: `Ubah jawaban forum berikut menjadi satu paragraf rapi dan mengalir, tetap diawali "Izin menjawab," tanpa bullet atau penomoran markdown, dan tanpa menyebut nama/NIM/dosen:\n\n${prevAnswer}`,
+          clarify: `Perjelas dan perbaiki jawaban forum berikut agar lebih mudah dipahami, tetap diawali "Izin menjawab," tanpa menyebut nama/NIM/dosen:\n\n${prevAnswer}`,
+          lengthen: `Perpanjang dan tambahkan elaborasi penjelasan pada jawaban forum berikut secara relevan, tetap diawali "Izin menjawab," tanpa bullet bintang atau markdown, dan tanpa menyebut nama/NIM/dosen:\n\n${prevAnswer}`,
+          numbered: `Ubah uraian jawaban forum berikut menjadi poin-poin bernomor angka (1., 2., 3.), tetap diawali "Izin menjawab," tanpa huruf tebal atau markdown, dan tanpa menyebut nama/NIM/dosen:\n\n${prevAnswer}`
         };
         return modes[mode] || prevAnswer;
       },
-      QUESTIONS: (content) => `Bacalah diskusi berikut, lalu buatkan beberapa saran pertanyaan yang natural, relevan, dan menarik untuk diajukan pada diskusi ini. Hindari bullet, penomoran, huruf tebal, italic, underline dan buat seolah-olah pertanyaan dari manusia. Pisahkan setiap pertanyaan dengan baris baru. Pastikan setiap saran pertanyaan berdiri sendiri, tidak saling terhubung, dan tidak menggunakan kata penghubung seperti 'selain itu', 'terus', 'dan' di awal kalimat.\n\n${content}\n\nSaran pertanyaan:`
+      QUESTIONS: (content) => `Bacalah konteks diskusi forum e-learning UNPAM berikut, lalu buatkan 3 saran pertanyaan yang berbobot, natural, dan relevan untuk diajukan di forum.
+ATURAN WAJIB:
+- Buat tepat 3 pertanyaan, pisahkan setiap pertanyaan HANYA dengan baris baru (enter).
+- Setiap pertanyaan harus berdiri sendiri, tidak saling terhubung, dan JANGAN menggunakan kata sambung di awal kalimat seperti "Selain itu", "Lalu", "Dan".
+- DILARANG menggunakan penomoran (1., 2.), bullet (*, -), huruf tebal (**), miring (*), atau markdown apapun. Hanya teks pertanyaan murni per baris.
+- DILARANG menyebut nama mahasiswa/NIM/dosen.
+- Gaya bahasa mahasiswa yang sopan dan ingin tahu.
+
+KONTEKS DISKUSI:
+${content}
+
+SARAN PERTANYAAN:`
     }
   };
 
@@ -70,11 +94,88 @@
         };
         if (!isNaN(quota.rpm.limit)) localStorage.setItem("gemini_quota", JSON.stringify(quota));
       } catch (e) {}
+    },
+    cleanForumAnswer(rawText) {
+      if (!rawText || typeof rawText !== "string") return "";
+
+      let cleaned = rawText
+        .replace(/^```(?:markdown)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .replace(/\*\*(.*?)\*\*/g, "$1")
+        .replace(/\*(.*?)\*/g, "$1")
+        .replace(/^#+\s+/gm, "")
+        .trim();
+
+      // 1. Strip introductory AI boilerplate
+      cleaned = cleaned.replace(
+        /^(?:berikut\s+(?:adalah\s+)?(?:jawaban|rangkuman|tanggapan|ulasan|analisis)[^:\n]*:?\s*|tentu,?\s+[^:\n]*:?\s*|baik(?:lah)?,?\s+[^:\n]*:?\s*)/i,
+        "",
+      );
+
+      // 2. Strip initial greetings
+      cleaned = cleaned.replace(
+        /^(?:halo|hai|selamat\s+(?:pagi|siang|sore|malam)|assalamu['’]?alaikum(?:\s+wr\.?\s*wb\.?)?)[^,\n]*[,\.\n\:\-]?\s*/i,
+        "",
+      );
+
+      // 3. Strip initial direct address to lecturer / peers
+      cleaned = cleaned.replace(
+        /^(?:kepada\s+)?(?:yth\.?\s+)?(?:bapak(?:\/ibu)?|ibu|pak|bu|bpk|dosen(?:\s+pengampu)?|rekan(?:\-rekan)?(?:\s+mahasiswa)?|saudara(?:\/i)?|teman(?:\-teman)?)\s*(?:dosen)?\s*(?:[A-Z][a-z]+|\d{8,14})?[,\.\:\-]?\s*/i,
+        "",
+      );
+
+      // 4. Strip 'menanggapi pertanyaan rekan 2310... / Budi...'
+      cleaned = cleaned.replace(
+        /^(?:menanggapi|merespons|membalas)\s+(?:pertanyaan|pendapat|tanggapan|argumen|apa\s+yang\s+disampaikan)?\s*(?:dari|oleh)?\s*(?:rekan|saudara|teman|bapak|ibu|pak|bu)?\s*(?:\d{8,14}|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)?[^,\n]*[,\.\n\:\-]?\s*/i,
+        "",
+      );
+
+      // 5. Strip 'Izin menjawab' prefix temporarily if present to clean any object/greeting that followed it
+      cleaned = cleaned.replace(/^izin\s+menjawab[,.\s]*/i, "");
+
+      // If after 'izin menjawab' there was still a greeting or object address:
+      cleaned = cleaned.replace(
+        /^(?:kepada\s+)?(?:yth\.?\s+)?(?:bapak(?:\/ibu)?|ibu|pak|bu|bpk|dosen(?:\s+pengampu)?|rekan(?:\-rekan)?(?:\s+mahasiswa)?|saudara(?:\/i)?|teman(?:\-teman)?)\s*(?:dosen)?\s*(?:[A-Z][a-z]+|\d{8,14})?[,\.\:\-]?\s*/i,
+        "",
+      );
+      cleaned = cleaned.replace(
+        /^(?:menanggapi|merespons|membalas)\s+(?:pertanyaan|pendapat|tanggapan|argumen|apa\s+yang\s+disampaikan)?\s*(?:dari|oleh)?\s*(?:rekan|saudara|teman|bapak|ibu|pak|bu)?\s*(?:\d{8,14}|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)?[^,\n]*[,\.\n\:\-]?\s*/i,
+        "",
+      );
+
+      // 6. Strip any accidental NIM numbers anywhere in text
+      cleaned = cleaned.replace(
+        /(?:\brekan|\bsaudara|\bteman|\bmahasiswa)?\s*\(?\b(?:NIM\s*)?\d{8,14}\b\)?/gi,
+        "",
+      );
+
+      // 7. Clean trailing punctuation and multiple spaces left behind
+      cleaned = cleaned
+        .replace(/[ \t]{2,}/g, " ")
+        .replace(/^\s*[,.;:\-]\s*/, "")
+        .trim();
+
+      // 8. Re-attach 'Izin menjawab,' cleanly
+      if (cleaned.length > 0) {
+        if (/^\d+\./.test(cleaned)) {
+          cleaned = `Izin menjawab,\n${cleaned}`;
+        } else {
+          const firstWord = cleaned.split(/\s+/)[0] || "";
+          if (/^[A-Z][a-z]+$/.test(firstWord)) {
+            cleaned = cleaned.charAt(0).toLowerCase() + cleaned.slice(1);
+          }
+          cleaned = `Izin menjawab, ${cleaned}`;
+        }
+      } else {
+        cleaned = "Izin menjawab, ";
+      }
+
+      return cleaned.trim();
     }
   };
 
   const ApiService = {
-    async callGemini(prompt) {
+    async callGemini(prompt, isQuestionMode = false) {
       const key = Utils.getApiKey();
       let modelRaw = localStorage.getItem("gemini_model") || Config.GEMINI.MODEL;
       let model = modelRaw.replace(/"/g, '');
@@ -98,7 +199,17 @@
       Utils.updateQuota(res.headers);
       Utils.updateModelLimit(model, false);
       const data = await res.json();
-      return data?.candidates?.[0]?.content?.parts?.[0]?.text || "Tidak ada jawaban.";
+      const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Tidak ada jawaban.";
+      if (isQuestionMode) {
+        return raw
+          .replace(/^```(?:markdown)?\s*/i, "")
+          .replace(/\s*```$/i, "")
+          .replace(/\*\*(.*?)\*\*/g, "$1")
+          .replace(/\*(.*?)\*/g, "$1")
+          .replace(/^#+\s+/gm, "")
+          .trim();
+      }
+      return Utils.cleanForumAnswer(raw);
     }
   };
 
@@ -201,7 +312,7 @@
       btn.innerText = "Memproses...";
       try {
         const content = Utils.extractContent(root);
-        const saran = await ApiService.callGemini(Config.PROMPTS.QUESTIONS(content));
+        const saran = await ApiService.callGemini(Config.PROMPTS.QUESTIONS(content), true);
         UIRenderer.showSaranQuestions(saran, root, replyBtn);
       } catch (e) { alert(e.message); }
       btn.disabled = false;
