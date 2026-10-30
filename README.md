@@ -49,17 +49,10 @@ Berikut adalah daftar komprehensif fitur-fitur baru dan modifikasi besar yang di
 - **Restorasi Tampilan Asli yang Bersih**: Merapikan seluruh komponen popup, tata letak kartu mata kuliah, dan kontrol extension agar kembali rapi, proporsional, dan modern.
 - **Perbaikan Toggle Button**: Memperbaiki fungsi tombol toggle dan kontrol pengaturan agar selalu responsif dan bebas macet.
 
-### 6. 🚀 Animasi Roket Autopilot di Fox Playground (`pet.html` / `pet.js`)
-- **Desain Pixel Art Vertikal (Retro Style)**: Roket dirancang dengan seni pixel klasik (*stepped pixels* & *crisp edges*) yang selaras dengan pet rubah dan ayam. Menggunakan moncong merah, tabung putih, 3 sirip pendaratan tripod merah, nozzle biru, dan jendela bulat kaca cyan dengan pantulan cahaya diagonal.
-- **Dinamika Terbang Vertikal ala SpaceX (Falcon 9)**:
-  - **Lepas Landas Vertikal**: Roket lepas landas tegak lurus dari bukit kiri dengan semburan api pendorong ke bawah.
-  - **Gravity Turn**: Condong secara bertahap ke arah tujuan melintasi langit atas dalam lintasan parabola suborbital.
-  - **Retro-Landing Burn**: Menegakkan kembali badan roket ke posisi tegak lurus saat mendekati bukit tujuan, melakukan pengereman vertikal, dan mendarat tegak bertengger di atas bukit kanan.
-  - **Looping Bolak-Balik**: Mengulang penerbangan pulang ke bukit kiri secara mulus (*seamless continuous loop*).
-- **Interaksi Klik Responsif**: Saat roket diklik (baik ketika terbang maupun mendarat), roket memantul (*bounce*) dan memunculkan gelembung reaksi:
-  > **"Autopilot Siap!"**
-- **Gaya Gelembung Identik**: Style bubble chat roket 100% identik dengan pet lain (background putih transparan membulat, font hijau hutan organik, tanpa border kaku).
-- **100% Manifest V3 CSP Compliant**: Seluruh kode interaksi dipindahkan ke `pet.js`, bebas script inline, memastikan kompatibilitas penuh dengan aturan keamanan Google Chrome.
+### 6. 🚀 Animasi Roket Autopilot di Fox Playground
+- **Animasi Roket Pixel Art**: Menghadirkan roket bertema Autopilot di latar belakang playground dengan gaya pixel art yang serasi dengan pet rubah dan ayam.
+- **Terbang & Mendarat Vertikal (SpaceX Style)**: Roket lepas landas secara vertikal dari bukit, terbang condong melintasi langit, lalu menegak kembali untuk mendarat mulus secara vertikal di bukit seberang secara berulang (*looping*).
+- **Interaktif Saat Diklik**: Klik pada roket untuk melihatnya memantul dan memunculkan gelembung pesan *"Autopilot Siap!"* dengan tampilan yang serasi dengan pet lainnya.
 
 ### 7. 🔑 Multi-Model Gemini AI & Secure API Key Manager
 - Mendukung integrasi model Google Gemini terbaru (`gemini-1.5-flash`, `gemini-1.5-pro`, dan varian mutakhir lainnya).
